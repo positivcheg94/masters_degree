@@ -42,6 +42,7 @@ import org.cloudbus.cloudsim.provisioners.ResourceProvisionerSimple;
 import org.cloudbus.cloudsim.resources.Pe;
 import org.cloudbus.cloudsim.resources.PeSimple;
 import org.cloudbus.cloudsim.schedulers.cloudlet.CloudletSchedulerTimeShared;
+import org.cloudbus.cloudsim.schedulers.cloudlet.CloudletSchedulerSpaceShared;
 import org.cloudbus.cloudsim.schedulers.vm.VmScheduler;
 import org.cloudbus.cloudsim.schedulers.vm.VmSchedulerTimeShared;
 import org.cloudbus.cloudsim.utilizationmodels.UtilizationModel;
@@ -55,12 +56,12 @@ import java.util.List;
 import java.util.Random;
 
 public class MatrixMultiplicationSimulation {
-    private static final int MIPS_MULTIPLIER = 1;
+    private static final int MIPS_MULTIPLIER = 10;
     private static final int HUGE_VALUE = 1000000000;
     // Matrix multiplication complexity
-    private static final double additionComplexity = 1;
+    private static final double additionComplexity = 0.001;
     private static final double multiplicationComplexityMultiplier = 1.4;
-    private static int additionMIPS = MIPS_MULTIPLIER*1;
+    private static double additionMIPS = MIPS_MULTIPLIER*1;
 
     private static final int HOSTS = 1;
     private static final int HOST_PES = 100;
@@ -83,8 +84,8 @@ public class MatrixMultiplicationSimulation {
         final List<Vm> list = new ArrayList<>(MIPS.size());
         for (int i = 0; i < MIPS.size(); i++) {
             Vm vm =  new VmSimple(i, MIPS.get(i), 1)
-                    .setRam(512).setBw(1000).setSize(10000)
-                    .setCloudletScheduler(new CloudletSchedulerTimeShared());
+                    .setRam(512).setBw(1000)
+                    .setCloudletScheduler(new CloudletSchedulerSpaceShared());
             list.add(vm);
         }
         return list;
@@ -152,38 +153,6 @@ public class MatrixMultiplicationSimulation {
         return slice2;
     }
 
-
-    private Datacenter datacenter;
-    private DatacenterBroker broker0;
-    private List<Vm> vmList;
-
-
-    public static void main(String[] args)
-    {
-        MatrixMultiplicationSimulation MMS = new MatrixMultiplicationSimulation(10000, 100, 200);
-
-
-        CloudSim simulation = new CloudSim();
-        Datacenter datacenter = createDatacenter(simulation);
-
-        DatacenterBroker broker0 = new DatacenterBrokerSimple(simulation);
-
-        List<Vm> vmList = createVmsWithMIPS(MMS.getMipsCapacities());
-        broker0.submitVmList(vmList);
-
-        List<Cloudlet> firstPlayerCloudlets = createCloudlets(MMS.problemSize(), MMS.getSlise1());
-        List<Cloudlet> secondPlayerCloudlets = createCloudlets(MMS.problemSize(), MMS.getSlise2());
-
-        broker0.submitCloudletList(firstPlayerCloudlets);
-        broker0.submitCloudletList(secondPlayerCloudlets);
-
-        simulation.start();
-
-        final List<Cloudlet> finishedCloudlets = broker0.getCloudletFinishedList();
-        new CloudletsTableBuilder(finishedCloudlets).build();
-    }
-
-
     private static List<Cloudlet> createCloudlets(long n, long slice) {
 
         long n_slices = n/slice;
@@ -205,28 +174,46 @@ public class MatrixMultiplicationSimulation {
         for (int i = 0; i < n_slices; i++) {
             for (int j = 0; i < n_slices; i++) {
                 list.add(new CloudletSimple(counter++, full_complexity, 1)
-                        .setFileSize(1024)
-                        .setOutputSize(1024)
                         .setUtilizationModel(utilization));
             }
         }
         if(partial_slice) {
             for (int i = 0; i < n_slices; i++) {
                 list.add(new CloudletSimple(counter++, p_complexity, 1)
-                        .setFileSize(1024)
-                        .setOutputSize(1024)
                         .setUtilizationModel(utilization));
                 list.add(new CloudletSimple(counter++, p_complexity, 1)
-                        .setFileSize(1024)
-                        .setOutputSize(1024)
                         .setUtilizationModel(utilization));
             }
             list.add(new CloudletSimple(counter++, pp_complexity, 1)
-                    .setFileSize(1024)
-                    .setOutputSize(1024)
                     .setUtilizationModel(utilization));
         }
 
         return list;
+    }
+
+
+    public static void main(String[] args)
+    {
+        MatrixMultiplicationSimulation MMS = new MatrixMultiplicationSimulation(100000, 100, 200);
+
+
+        CloudSim simulation = new CloudSim();
+        Datacenter datacenter = createDatacenter(simulation);
+
+        DatacenterBroker broker0 = new MaxMaxScheduler(simulation);
+
+        List<Vm> vmList = createVmsWithMIPS(MMS.getMipsCapacities());
+        broker0.submitVmList(vmList);
+
+        List<Cloudlet> firstPlayerCloudlets = createCloudlets(MMS.problemSize(), MMS.getSlise1());
+        List<Cloudlet> secondPlayerCloudlets = createCloudlets(MMS.problemSize(), MMS.getSlise2());
+
+        broker0.submitCloudletList(firstPlayerCloudlets);
+        broker0.submitCloudletList(secondPlayerCloudlets);
+
+        simulation.start();
+
+        final List<Cloudlet> finishedCloudlets = broker0.getCloudletFinishedList();
+        new CloudletsTableBuilder(finishedCloudlets).build();
     }
 }
