@@ -61,7 +61,7 @@ public class MatrixMultiplicationSimulation {
     // Matrix multiplication complexity
     private static final double additionComplexity = 0.001;
     private static final double multiplicationComplexityMultiplier = 1.4;
-    private static double additionMIPS = MIPS_MULTIPLIER*1;
+    private static double additionMIPS = MIPS_MULTIPLIER*additionComplexity;
 
     private static final int HOSTS = 1;
     private static final int HOST_PES = 100;
@@ -122,12 +122,12 @@ public class MatrixMultiplicationSimulation {
 
     public MatrixMultiplicationSimulation(int n, int slice_size1, int slice_size2) {
         MipsCapacities = new ArrayList<>();
-        MipsCapacities.add((long)100000*MIPS_MULTIPLIER);
-        MipsCapacities.add((long)50002341*MIPS_MULTIPLIER);
-        MipsCapacities.add((long)600240*MIPS_MULTIPLIER);
-        MipsCapacities.add((long)2000213*MIPS_MULTIPLIER);
-        MipsCapacities.add((long)5001123*MIPS_MULTIPLIER);
-        MipsCapacities.add((long)14500244*MIPS_MULTIPLIER);
+        MipsCapacities.add((long)(100000*additionMIPS));
+        MipsCapacities.add((long)(50002341*additionMIPS));
+        MipsCapacities.add((long)(600240*additionMIPS));
+        MipsCapacities.add((long)(2000213*additionMIPS));
+        MipsCapacities.add((long)(5001123*additionMIPS));
+        MipsCapacities.add((long)(14500244*additionMIPS));
         problem_size = n;
         slice1 = slice_size1;
         slice2 = slice_size2;
@@ -171,14 +171,18 @@ public class MatrixMultiplicationSimulation {
         long p_complexity = (long)(additionMIPS* CalculateOverallComplexity(slice,n,partial_slice_size,additionComplexity,multiplicationComplexityMultiplier));
         long pp_complexity = (long)(additionMIPS* CalculateOverallComplexity(n,slice,n,additionComplexity,multiplicationComplexityMultiplier));
 
-        for (int i = 0; i < n_slices; i++) {
-            for (int j = 0; i < n_slices; i++) {
+        for (int i = 0; i < n_slices; i++)
+        {
+            for (int j = 0; i < n_slices; i++)
+            {
                 list.add(new CloudletSimple(counter++, full_complexity, 1)
                         .setUtilizationModel(utilization));
             }
         }
-        if(partial_slice) {
-            for (int i = 0; i < n_slices; i++) {
+        if(partial_slice)
+        {
+            for (int i = 0; i < n_slices; i++)
+            {
                 list.add(new CloudletSimple(counter++, p_complexity, 1)
                         .setUtilizationModel(utilization));
                 list.add(new CloudletSimple(counter++, p_complexity, 1)
@@ -191,19 +195,21 @@ public class MatrixMultiplicationSimulation {
         return list;
     }
 
-
-    public static void main(String[] args)
+    public static double simulateProblem(long size, long slice1, long slice2)
     {
         MatrixMultiplicationSimulation MMS = new MatrixMultiplicationSimulation(100000, 100, 200);
 
-
         CloudSim simulation = new CloudSim();
+
         Datacenter datacenter = createDatacenter(simulation);
+        datacenter.setLog(false);
 
         DatacenterBroker broker0 = new MaxMaxScheduler(simulation);
+        broker0.setLog(false);
 
         List<Vm> vmList = createVmsWithMIPS(MMS.getMipsCapacities());
         broker0.submitVmList(vmList);
+        broker0.setLog(false);
 
         List<Cloudlet> firstPlayerCloudlets = createCloudlets(MMS.problemSize(), MMS.getSlise1());
         List<Cloudlet> secondPlayerCloudlets = createCloudlets(MMS.problemSize(), MMS.getSlise2());
@@ -213,7 +219,17 @@ public class MatrixMultiplicationSimulation {
 
         simulation.start();
 
-        final List<Cloudlet> finishedCloudlets = broker0.getCloudletFinishedList();
-        new CloudletsTableBuilder(finishedCloudlets).build();
+        return simulation.clock();
+    }
+
+
+    public static void main(String[] args)
+    {
+        for(int i = 1; i < 100; ++i)
+            for(int j = 1; j < 100; ++j)
+            {
+                double simulation_time = simulateProblem(100000, i, j);
+            }
+
     }
 }
