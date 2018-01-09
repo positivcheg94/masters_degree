@@ -52,6 +52,8 @@ import org.cloudbus.cloudsim.vms.Vm;
 import org.cloudbus.cloudsim.vms.VmSimple;
 import org.cloudsimplus.builders.tables.CloudletsTableBuilder;
 
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -59,9 +61,8 @@ import java.util.Random;
 public class MatrixMultiplicationSimulation {
     private static final int HUGE_VALUE = 1000000000;
     // Matrix multiplication complexity
-    private static final double additionComplexity = 0.0001;
     private static final double multiplicationComplexityMultiplier = 1.4;
-    private static double additionMIPS = additionComplexity;
+    private static final double additionMIPS = 0.00001;
 
     private static final int HOSTS = 1;
     private static final int HOST_PES = 100;
@@ -70,34 +71,34 @@ public class MatrixMultiplicationSimulation {
     private static int counter = 0;
 
     //members
-    private final int problem_size;
-    private final int slice1;
-    private final int slice2;
+    private final long problem_size;
+    private final long slice1;
+    private final long slice2;
 
-    public MatrixMultiplicationSimulation(int n, int slice_size1, int slice_size2) {
+    public MatrixMultiplicationSimulation(long n, long slice_size1, long slice_size2) {
         problem_size = n;
         slice1 = slice_size1;
         slice2 = slice_size2;
     }
 
-    int problemSize()
+    long problemSize()
     {
         return problem_size;
     }
 
-    int getSlise1()
+    long getSlise1()
     {
         return slice1;
     }
 
-    int getSlise2()
+    long getSlise2()
     {
         return slice2;
     }
 
-    private static double CalculateOverallComplexity(long m, long n, long k, double addComplexity, double mulComplexityMultiplication)
+    private static double CalculateOverallComplexity(long m, long n, long k, double mulComplexityMultiplication)
     {
-        return m*k*addComplexity*(n*n*mulComplexityMultiplication + n-1);
+        return m*k*(n*n*mulComplexityMultiplication + n-1);
     }
 
     private static List<Vm> createVmsWithMIPS(List<Long> MIPS) {
@@ -156,9 +157,9 @@ public class MatrixMultiplicationSimulation {
         final List<Cloudlet> list = new ArrayList<>((int)n_cloudlets);
         UtilizationModel utilization = new UtilizationModelFull();
 
-        long full_complexity = (long)(additionMIPS* CalculateOverallComplexity(slice,n,slice,additionComplexity,multiplicationComplexityMultiplier));
-        long p_complexity = (long)(additionMIPS* CalculateOverallComplexity(slice,n,partial_slice_size,additionComplexity,multiplicationComplexityMultiplier));
-        long pp_complexity = (long)(additionMIPS* CalculateOverallComplexity(n,slice,n,additionComplexity,multiplicationComplexityMultiplier));
+        long full_complexity = (long)(additionMIPS*CalculateOverallComplexity(slice,n,slice,multiplicationComplexityMultiplier));
+        long p_complexity = (long)(additionMIPS*CalculateOverallComplexity(slice,n,partial_slice_size,multiplicationComplexityMultiplier));
+        long pp_complexity = (long)(additionMIPS*CalculateOverallComplexity(n,slice,n,multiplicationComplexityMultiplier));
 
         for (int i = 0; i < n_slices; i++)
         {
@@ -186,7 +187,7 @@ public class MatrixMultiplicationSimulation {
 
     public static double simulateProblem(long size, long slice1, long slice2, List<Long> MIPSCapacities)
     {
-        MatrixMultiplicationSimulation MMS = new MatrixMultiplicationSimulation(100000, 100, 200);
+        MatrixMultiplicationSimulation MMS = new MatrixMultiplicationSimulation(size, slice1, slice2);
 
         CloudSim simulation = new CloudSim();
 
@@ -210,28 +211,50 @@ public class MatrixMultiplicationSimulation {
 
 
     public static void main(String[] args)
+            throws IOException
     {
         Log.disable();
 
         final int max_slice_size = 100;
-        
-        List<Long> MipsCapacities = new ArrayList<>();
-        MipsCapacities.add((long)(100000*additionMIPS));
-        MipsCapacities.add((long)(50002341*additionMIPS));
-        MipsCapacities.add((long)(600240*additionMIPS));
-        MipsCapacities.add((long)(2000213*additionMIPS));
+        final int problem_size = 1000;
 
+        List<Long> MipsCapacities = new ArrayList<>();
+        MipsCapacities.add((long)(100000000));
+        MipsCapacities.add((long)(500023410));
+        MipsCapacities.add((long)(600240000));
+        MipsCapacities.add((long)(200021300));
+
+
+        double start = System.nanoTime();
         double results[][] = new double[max_slice_size][];
         for(int i = 1; i < max_slice_size; ++i)
         {
             double[] results_i = new double[max_slice_size];
             for (int j = 1; j < max_slice_size; ++j)
             {
-                results_i[j] = simulateProblem(1000, i, j, MipsCapacities);
+                results_i[j] = simulateProblem(problem_size, i, j, MipsCapacities);
             }
             results[i] = results_i;
         }
+        double end = System.nanoTime();
+        System.out.println("Time for all simulations(in seconds) ");
+        System.out.println(Double.toString((end-start)/1e9));
 
-
+        FileWriter writer = new FileWriter("results.txt", false);
+        writer.write("First player,");
+        writer.write("Second player,");
+        writer.write("Time(in seconds)");
+        writer.write('\n');
+        for(int i = 1; i < max_slice_size; ++i) {
+            for (int j = 1; j < max_slice_size; ++j) {
+                writer.write(Integer.toString(i));
+                writer.write(',');
+                writer.write(Integer.toString(j));
+                writer.write(',');
+                writer.write(Double.toString(results[i][j]));
+                writer.write('\n');
+            }
+        }
+        writer.close();
     }
 }
