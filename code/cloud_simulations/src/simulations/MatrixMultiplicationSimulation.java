@@ -23,10 +23,10 @@
  */
 package simulations;
 
+import org.cloudbus.cloudsim.brokers.DatacenterBrokerSimple;
 import org.cloudbus.cloudsim.util.Log;
 import org.cloudbus.cloudsim.allocationpolicies.VmAllocationPolicySimple;
 import org.cloudbus.cloudsim.brokers.DatacenterBroker;
-import org.cloudbus.cloudsim.brokers.DatacenterBrokerSimple;
 import org.cloudbus.cloudsim.cloudlets.Cloudlet;
 import org.cloudbus.cloudsim.cloudlets.CloudletSimple;
 import org.cloudbus.cloudsim.core.CloudSim;
@@ -42,7 +42,6 @@ import org.cloudbus.cloudsim.provisioners.ResourceProvisioner;
 import org.cloudbus.cloudsim.provisioners.ResourceProvisionerSimple;
 import org.cloudbus.cloudsim.resources.Pe;
 import org.cloudbus.cloudsim.resources.PeSimple;
-import org.cloudbus.cloudsim.schedulers.cloudlet.CloudletSchedulerTimeShared;
 import org.cloudbus.cloudsim.schedulers.cloudlet.CloudletSchedulerSpaceShared;
 import org.cloudbus.cloudsim.schedulers.vm.VmScheduler;
 import org.cloudbus.cloudsim.schedulers.vm.VmSchedulerTimeShared;
@@ -56,7 +55,6 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 
 public class MatrixMultiplicationSimulation {
     private static final int HUGE_VALUE = 1000000000;
@@ -193,25 +191,25 @@ public class MatrixMultiplicationSimulation {
 
         Datacenter datacenter = createDatacenter(simulation);
 
-        DatacenterBroker broker0 = new MaxMaxScheduler(simulation);
+        //DatacenterBroker broker0 = new SimpleSchedulers.MaxMaxScheduler(simulation);
+        //DatacenterBroker broker0 = new SimpleSchedulers.MaxMinScheduler(simulation);
+        //DatacenterBroker broker0 = new SimpleSchedulers.MinMaxScheduler(simulation);
+        DatacenterBroker broker0 = new SimpleSchedulers.MinMinScheduler(simulation);
 
         List<Vm> vmList = createVmsWithMIPS(MIPSCapacities);
         broker0.submitVmList(vmList);
 
-        List<Cloudlet> firstPlayerCloudlets = createCloudlets(MMS.problemSize(), MMS.getSlise1());
-        List<Cloudlet> secondPlayerCloudlets = createCloudlets(MMS.problemSize(), MMS.getSlise2());
+        List<Cloudlet> cloudlets = createCloudlets(MMS.problemSize(), MMS.getSlise1());
+        cloudlets.addAll(createCloudlets(MMS.problemSize(), MMS.getSlise2()));
 
-        broker0.submitCloudletList(firstPlayerCloudlets);
-        broker0.submitCloudletList(secondPlayerCloudlets);
+        broker0.submitCloudletList(cloudlets);
 
         simulation.start();
 
         return simulation.clock();
     }
 
-
-    public static void main(String[] args)
-            throws IOException
+    static void sim1() throws IOException
     {
         Log.disable();
 
@@ -256,5 +254,47 @@ public class MatrixMultiplicationSimulation {
             }
         }
         writer.close();
+    }
+
+    static void sim2() throws IOException
+    {
+        List<Long> MipsCapacities = new ArrayList<>();
+        MipsCapacities.add((long)(100000000));
+        MipsCapacities.add((long)(500023410));
+        MipsCapacities.add((long)(600240000));
+        MipsCapacities.add((long)(200021300));
+
+        MatrixMultiplicationSimulation MMS = new MatrixMultiplicationSimulation(1000, 20, 30);
+
+        CloudSim simulation = new CloudSim();
+
+        Datacenter datacenter = createDatacenter(simulation);
+
+        //DatacenterBroker broker0 = new SimpleSchedulers.MaxMaxScheduler(simulation);
+        //DatacenterBroker broker0 = new SimpleSchedulers.MaxMinScheduler(simulation);
+        //DatacenterBroker broker0 = new SimpleSchedulers.MinMaxScheduler(simulation);
+        DatacenterBroker broker0 = new SimpleSchedulers.MinMinScheduler(simulation);
+        //DatacenterBroker broker0 = new DatacenterBrokerSimple(simulation);
+
+        List<Vm> vmList = createVmsWithMIPS(MipsCapacities);
+        broker0.submitVmList(vmList);
+
+        List<Cloudlet> cloudlets = createCloudlets(MMS.problemSize(), MMS.getSlise1());
+        cloudlets.addAll(createCloudlets(MMS.problemSize(), MMS.getSlise2()));
+
+        broker0.submitCloudletList(cloudlets);
+
+        simulation.start();
+        List<Cloudlet> newList = broker0.getCloudletFinishedList();
+
+
+        new CloudletsTableBuilder(newList).build();
+    }
+
+
+
+    public static void main(String[] args) throws IOException
+    {
+        sim2();
     }
 }
