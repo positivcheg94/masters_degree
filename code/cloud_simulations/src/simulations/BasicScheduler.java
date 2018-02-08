@@ -11,18 +11,15 @@ import org.cloudbus.cloudsim.vms.Vm;
 import java.util.*;
 import java.util.function.Function;
 
-public class BasicScheduler extends DatacenterBrokerAbstract
-{
+public class BasicScheduler extends DatacenterBrokerAbstract {
     private final HashSet<Cloudlet> submittedCloudlets = new HashSet<Cloudlet>();
     private final List<Cloudlet> finishedCloudlets = new ArrayList<>();
     private int runningCloudlets = 0;
 
-    BasicScheduler(CloudSim simulation)
-    {
+    BasicScheduler(CloudSim simulation) {
         super(simulation);
         setDatacenterSupplier(this::selectDatacenterForWaitingVms);
         setFallbackDatacenterSupplier(this::selectFallbackDatacenterForWaitingVms);
-        setVmMapper(this::selectFirstFreeVm);
     }
 
     protected Datacenter selectDatacenterForWaitingVms() {
@@ -34,34 +31,6 @@ public class BasicScheduler extends DatacenterBrokerAbstract
                 .filter(dc -> !getDatacenterRequestedList().contains(dc))
                 .findFirst()
                 .orElse(Datacenter.NULL);
-    }
-
-    protected Vm selectFirstFreeVm(Cloudlet cloudlet) {
-        if (cloudlet.isBindToVm() && getVmExecList().contains(cloudlet.getVm())) {
-            return cloudlet.getVm();
-        }
-
-        List<Cloudlet> finished = getCloudletFinishedList();
-        Set<Cloudlet> created = getCloudletCreatedList();
-        Set<Vm> running = new HashSet<Vm>();
-        for(Iterator<Cloudlet> i = created.iterator(); i.hasNext();)
-        {
-            Cloudlet current = i.next();
-            if(!finished.contains(current))
-            {
-                running.add(current.getVm());
-            }
-        }
-
-        List<Vm> runningVms = getVmExecList();
-        for (Iterator<Vm> i = runningVms.iterator(); i.hasNext();) {
-            Vm vm = i.next();
-            // Assume that vm is not used if CPU usage is 0
-            if(!running.contains(vm))
-                return vm;
-        }
-
-        return Vm.NULL;
     }
 
     @Override
@@ -87,8 +56,11 @@ public class BasicScheduler extends DatacenterBrokerAbstract
                 getSimulation().clock(), getName(), c.getClass().getSimpleName(), c.getId()));
         --runningCloudlets;
 
-        if(runningCloudlets > 0)
-        {
+        if(!getCloudletWaitingList().isEmpty()) {
+            sendOneCloudletToVm(c.getVm());
+        }
+
+        if (runningCloudlets > 0) {
             return;
         }
 
@@ -114,37 +86,35 @@ public class BasicScheduler extends DatacenterBrokerAbstract
         requestDatacenterToCreateWaitingVms();
     }
 
+    protected boolean sendOneCloudletToVm(Vm vm) {
+        List<Cloudlet> waiting = getCloudletWaitingList();
+        if (waiting.isEmpty())
+            return false;
+        Cloudlet cloudlet = waiting.remove(0);
+        cloudlet.setVm(vm);
+        send(getVmDatacenter(vm).getId(), cloudlet.getSubmissionDelay(), CloudSimTags.CLOUDLET_SUBMIT, cloudlet);
+
+        final String delayStr = cloudlet.getSubmissionDelay() > 0 ?
+                String.format(" with a requested delay of %.0f seconds", cloudlet.getSubmissionDelay()) : "";
+
+        println(String.format("%.2f: %s: Sending %s %d to %s in %s%s.",
+                getSimulation().clock(), getName(), cloudlet.getClass().getSimpleName(), cloudlet.getId(),
+                vm, vm.getHost(), delayStr));
+        ++runningCloudlets;
+
+        // remove created cloudlets from waiting list
+        waiting.remove(cloudlet);
+        submittedCloudlets.add(cloudlet);
+        return true;
+    }
+
     @Override
     protected void requestDatacentersToCreateWaitingCloudlets()
     {
-        List<Cloudlet> waiting = getCloudletWaitingList();
-        final List<Cloudlet> successfullySubmitted = new ArrayList<>();
-        int nVms = getVmExecList().size();
-        Iterator<Cloudlet> i = waiting.iterator();
-        Iterator<Vm> ii = getVmExecList().iterator();
-        while(nVms > 0 && i.hasNext())
+
+        for (Vm vm : getVmExecList())
         {
-            Cloudlet cloudlet = i.next();
-            Vm vm = ii.next();
-            cloudlet.setVm(vm);
-            send(getVmDatacenter(vm).getId(),
-                    cloudlet.getSubmissionDelay(), CloudSimTags.CLOUDLET_SUBMIT, cloudlet);
-            successfullySubmitted.add(cloudlet);
-
-            final String delayStr =
-                    cloudlet.getSubmissionDelay() > 0 ?
-                            String.format(" with a requested delay of %.0f seconds", cloudlet.getSubmissionDelay()) :
-                            "";
-            println(String.format(
-                    "%.2f: %s: Sending %s %d to %s in %s%s.",
-                    getSimulation().clock(), getName(), cloudlet.getClass().getSimpleName(), cloudlet.getId(),
-                    vm, vm.getHost(), delayStr));
-            --nVms;
-            ++runningCloudlets;
+            sendOneCloudletToVm(vm);
         }
-
-        // remove created cloudlets from waiting list
-        waiting.removeAll(successfullySubmitted);
-        submittedCloudlets.addAll(successfullySubmitted);
     }
 }

@@ -54,6 +54,7 @@ import org.cloudsimplus.builders.tables.CloudletsTableBuilder;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 public class MatrixMultiplicationSimulation {
@@ -218,9 +219,10 @@ public class MatrixMultiplicationSimulation {
 
         List<Long> MipsCapacities = new ArrayList<>();
         MipsCapacities.add((long)(100000000));
+        MipsCapacities.add((long)(200021300));
         MipsCapacities.add((long)(500023410));
         MipsCapacities.add((long)(600240000));
-        MipsCapacities.add((long)(200021300));
+
 
 
         double start = System.nanoTime();
@@ -260,11 +262,11 @@ public class MatrixMultiplicationSimulation {
     {
         List<Long> MipsCapacities = new ArrayList<>();
         MipsCapacities.add((long)(100000000));
+        MipsCapacities.add((long)(200021300));
         MipsCapacities.add((long)(500023410));
         MipsCapacities.add((long)(600240000));
-        MipsCapacities.add((long)(200021300));
 
-        MatrixMultiplicationSimulation MMS = new MatrixMultiplicationSimulation(1000, 20, 30);
+        MatrixMultiplicationSimulation MMS = new MatrixMultiplicationSimulation(50000, 200, 300);
 
         CloudSim simulation = new CloudSim();
 
@@ -286,6 +288,13 @@ public class MatrixMultiplicationSimulation {
 
         simulation.start();
         List<Cloudlet> newList = broker0.getCloudletFinishedList();
+
+        newList.sort(new Comparator<Cloudlet>() {
+            @Override
+            public int compare(Cloudlet o1, Cloudlet o2) {
+                return (int)(o1.getExecStartTime() - o2.getExecStartTime());
+            }
+        });
 
 
         new CloudletsTableBuilder(newList).build();
