@@ -6,7 +6,7 @@ public class SimpleSchedulers
 {
     public static class MaxMaxScheduler extends BasicScheduler
     {
-        MaxMaxScheduler(CloudSim simulation)
+        public MaxMaxScheduler(CloudSim simulation)
         {
             super(simulation);
             setVmComparator(new CloudSimComparators.VmMaxFirstComparator());
@@ -16,7 +16,7 @@ public class SimpleSchedulers
 
     public static class MinMinScheduler extends BasicScheduler
     {
-        MinMinScheduler(CloudSim simulation)
+        public MinMinScheduler(CloudSim simulation)
         {
             super(simulation);
             setVmComparator(new CloudSimComparators.VmMinFirstComparator());
@@ -26,7 +26,7 @@ public class SimpleSchedulers
 
     public static class MinMaxScheduler extends BasicScheduler
     {
-        MinMaxScheduler(CloudSim simulation)
+        public MinMaxScheduler(CloudSim simulation)
         {
             super(simulation);
             setVmComparator(new CloudSimComparators.VmMaxFirstComparator());
@@ -36,7 +36,7 @@ public class SimpleSchedulers
 
     public static class MaxMinScheduler extends BasicScheduler
     {
-        MaxMinScheduler(CloudSim simulation)
+        public MaxMinScheduler(CloudSim simulation)
         {
             super(simulation);
             setVmComparator(new CloudSimComparators.VmMinFirstComparator());
