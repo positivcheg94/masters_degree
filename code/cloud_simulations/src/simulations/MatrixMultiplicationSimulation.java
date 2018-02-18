@@ -239,6 +239,8 @@ public class MatrixMultiplicationSimulation {
         end = System.nanoTime();
 
         List<Cloudlet> received = broker.getCloudletFinishedList();
+        if(received.size() != cloudlets.size())
+            throw new RuntimeException("NOT AGAIN");
         received.sort((o1, o2) -> (int)(o1.getExecStartTime() - o2.getExecStartTime()));
 
         double last_arrival_time = received.stream().mapToDouble(cl -> cl.getFinishTime()).max().getAsDouble();
@@ -258,46 +260,39 @@ public class MatrixMultiplicationSimulation {
     }
 
     static void sim1(Class brokerClass, List<Long> MipsCapacities,
-                     int problem_size, int max_slice_size, int start_slice_size,
-                     boolean debug_info)
+                      int problem_size, int max_slice_size, int start_slice_size,
+                      boolean debug_info)
             throws IOException, NoSuchMethodException, InstantiationException,
             IllegalAccessException, IllegalArgumentException, InvocationTargetException
     {
         double start = System.nanoTime();
-        double results[][] = new double[max_slice_size][];
+
+        FileWriter writer = new FileWriter("results.txt", false);
+        writer.write("First player,");
+        writer.write("Second player,");
+        writer.write("Time(in seconds)\n");
+
         for(int i = start_slice_size; i < max_slice_size; ++i)
         {
-            double[] results_i = new double[max_slice_size];
             for (int j = start_slice_size; j < max_slice_size; ++j)
             {
                 System.out.println(String.format("Processing 1 - %d of %d 2 - %d of %d", i, max_slice_size, j, max_slice_size));
-                results_i[j] = simulateProblem(brokerClass, MipsCapacities, problem_size, i, j, debug_info);
+                double time = simulateProblem(brokerClass, MipsCapacities, problem_size, i, j, debug_info);
+                writer.write(Integer.toString(i));
+                writer.write(',');
+                writer.write(Integer.toString(j));
+                writer.write(',');
+                writer.write(Double.toString(time));
+                writer.write('\n');
+                writer.flush();
             }
-            results[i] = results_i;
         }
         double end = System.nanoTime();
         System.out.println("Time for all simulations(in seconds) ");
         System.out.println(Double.toString((end-start)/1e9));
 
-        FileWriter writer = new FileWriter("results.txt", false);
-        writer.write("First player,");
-        writer.write("Second player,");
-        writer.write("Time(in seconds)");
-        writer.write('\n');
-        for(int i = start_slice_size; i < max_slice_size; ++i) {
-            for (int j = start_slice_size; j < max_slice_size; ++j) {
-                writer.write(Integer.toString(i));
-                writer.write(',');
-                writer.write(Integer.toString(j));
-                writer.write(',');
-                writer.write(Double.toString(results[i][j]));
-                writer.write('\n');
-            }
-        }
         writer.close();
     }
-
-
 
     public static void main(String[] args)
             throws IOException, NoSuchMethodException, InstantiationException,
