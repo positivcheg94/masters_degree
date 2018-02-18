@@ -200,11 +200,14 @@ public class MatrixMultiplicationSimulation {
         return list;
     }
 
-    public static double simulateProblem(Class brokerClass, long size, long slice1, long slice2, List<Long> MIPSCapacities)
+    public static double simulateProblem(Class brokerClass, List<Long> MIPSCapacities,
+                                         long size, long slice1, long slice2, boolean debug_info)
             throws NoSuchMethodException, InstantiationException,
             IllegalAccessException, IllegalArgumentException, InvocationTargetException
     {
         MatrixMultiplicationSimulation MMS = new MatrixMultiplicationSimulation(size, slice1, slice2);
+
+        double start, end;
 
         CloudSim simulation = new CloudSim();
 
@@ -216,22 +219,47 @@ public class MatrixMultiplicationSimulation {
         List<Vm> vmList = createVmsWithMIPS(MIPSCapacities);
         broker.submitVmList(vmList);
 
+        start = System.nanoTime();
         List<Cloudlet> cloudlets = createCloudlets(MMS.problemSize(), MMS.getSlise1());
         cloudlets.addAll(createCloudlets(MMS.problemSize(), MMS.getSlise2()));
+        end = System.nanoTime();
+
+        // DEBUG INFO
+        if(debug_info)
+        {
+            System.out.println("Cloudlet creation duration ");
+            System.out.println(Double.toString((end - start) / 1e9));
+            System.out.println(String.format("Submited %d cloudlets", cloudlets.size()));
+        }
 
         broker.submitCloudletList(cloudlets);
 
+        start = System.nanoTime();
         simulation.start();
+        end = System.nanoTime();
 
         List<Cloudlet> received = broker.getCloudletFinishedList();
-        int sent_size = cloudlets.size();
-        int recv_size = received.size();
-        if(sent_size != recv_size)
-            System.out.println(String.format("%d != %d", sent_size, recv_size));
-        return simulation.clock();
+        received.sort((o1, o2) -> (int)(o1.getExecStartTime() - o2.getExecStartTime()));
+
+        double last_arrival_time = received.stream().mapToDouble(cl -> cl.getFinishTime()).max().getAsDouble();
+
+        // DEBUG INFO
+        if(debug_info)
+        {
+            System.out.println(String.format("Simulation duration %f seconds", (end - start) / 1e9));
+            System.out.println(String.format("Simulation internal duration %f seconds", last_arrival_time));
+
+            System.out.println(String.format("Received %d cloudlets", received.size()));
+            new CloudletsTableBuilder(cloudlets).build();
+            new CloudletsTableBuilder(received).build();
+        }
+
+        return last_arrival_time;
     }
 
-    static void sim1(Class brokerClass, List<Long> MipsCapacities, int problem_size, int max_slice_size, int start_slice_size)
+    static void sim1(Class brokerClass, List<Long> MipsCapacities,
+                     int problem_size, int max_slice_size, int start_slice_size,
+                     boolean debug_info)
             throws IOException, NoSuchMethodException, InstantiationException,
             IllegalAccessException, IllegalArgumentException, InvocationTargetException
     {
@@ -243,7 +271,7 @@ public class MatrixMultiplicationSimulation {
             for (int j = start_slice_size; j < max_slice_size; ++j)
             {
                 System.out.println(String.format("Processing 1 - %d of %d 2 - %d of %d", i, max_slice_size, j, max_slice_size));
-                results_i[j] = simulateProblem(brokerClass, problem_size, i, j, MipsCapacities);
+                results_i[j] = simulateProblem(brokerClass, MipsCapacities, problem_size, i, j, debug_info);
             }
             results[i] = results_i;
         }
@@ -269,46 +297,6 @@ public class MatrixMultiplicationSimulation {
         writer.close();
     }
 
-    static void sim2(Class brokerClass, List<Long> MipsCapacities, int problem_size, int slice_size1, int slice_size2)
-            throws IOException, NoSuchMethodException, InstantiationException,
-            IllegalAccessException, IllegalArgumentException, InvocationTargetException
-    {
-        MatrixMultiplicationSimulation MMS = new MatrixMultiplicationSimulation(problem_size, slice_size1, slice_size2);
-
-        CloudSim simulation = new CloudSim();
-
-        Datacenter datacenter = createDatacenter(simulation);
-
-        Constructor constructor = brokerClass.getConstructor(CloudSim.class);
-        DatacenterBroker broker = (DatacenterBroker)constructor.newInstance(simulation);
-
-        List<Vm> vmList = createVmsWithMIPS(MipsCapacities);
-        broker.submitVmList(vmList);
-
-        double start = System.nanoTime();
-        List<Cloudlet> cloudlets = createCloudlets(MMS.problemSize(), MMS.getSlise1());
-        cloudlets.addAll(createCloudlets(MMS.problemSize(), MMS.getSlise2()));
-        double end = System.nanoTime();
-        System.out.println("Cloudlet creation duration ");
-        System.out.println(Double.toString((end-start)/1e9));
-        System.out.println(String.format("Submited %d cloudlets", cloudlets.size()));
-
-        broker.submitCloudletList(cloudlets);
-
-        start = System.nanoTime();
-        simulation.start();
-        end = System.nanoTime();
-        System.out.println(String.format("Simulation duration %f seconds", (end-start)/1e9));
-        System.out.println(String.format("Simulation internal duration %f seconds", simulation.clock()));
-
-        List<Cloudlet> received = broker.getCloudletFinishedList();
-        System.out.println(String.format("Received %d cloudlets", received.size()));
-
-        received.sort((o1, o2) -> (int)(o1.getExecStartTime() - o2.getExecStartTime()));
-        new CloudletsTableBuilder(cloudlets).build();
-        new CloudletsTableBuilder(received).build();
-    }
-
 
 
     public static void main(String[] args)
@@ -321,12 +309,15 @@ public class MatrixMultiplicationSimulation {
             MipsCapacities.add(TAKEN_NOMINAL_MIPS*3);
             MipsCapacities.add(TAKEN_NOMINAL_MIPS*7);
 
-            Log.disable();
-            //sim1(SimpleSchedulers.MaxMaxScheduler.class ,MipsCapacities, 1000, 500, 20);
+            //Log.disable();
+            //sim1(SimpleSchedulers.MaxMaxScheduler.class ,MipsCapacities, 1000, 100, 20, true);
+            simulateProblem(SimpleSchedulers.MaxMaxScheduler.class ,MipsCapacities, 1000, 100, 20, true);
 
-            sim2(SimpleSchedulers.MaxMinScheduler.class, MipsCapacities, 5000, 50, 70);
+            //sim2(SimpleSchedulers.MaxMinScheduler.class, MipsCapacities, 5000, 5, 7);
+            //sim2(SimpleSchedulers.MaxMinScheduler.class, MipsCapacities, 5000, 50, 70);
             //sim2(SimpleSchedulers.MaxMinScheduler.class, MipsCapacities, 5000, 200, 300);
             //sim2(SimpleSchedulers.MaxMinScheduler.class, MipsCapacities, 5000, 700, 700);
+            //sim2(SimpleSchedulers.MaxMinScheduler.class, MipsCapacities, 5000, 1500, 1500);
             //sim2(SimpleSchedulers.MaxMinScheduler.class, MipsCapacities, 5000, 900, 900);
             //sim2(SimpleSchedulers.MaxMaxScheduler.class, MipsCapacities, 5000, 5000, 5000);
             //sim2(SimpleSchedulers.MaxMaxScheduler.class, MipsCapacities, 10000, 100, 200);
