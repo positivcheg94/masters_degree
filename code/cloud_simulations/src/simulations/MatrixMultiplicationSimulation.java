@@ -259,8 +259,8 @@ public class MatrixMultiplicationSimulation {
         return last_arrival_time;
     }
 
-    static void sim1(Class brokerClass, List<Long> MipsCapacities,
-                      int problem_size, int max_slice_size, int start_slice_size,
+    static void simulate(Class brokerClass, List<Long> MipsCapacities,
+                      long problem_size, Iterable<Long> slices1, Iterable<Long> slices2,
                       boolean debug_info)
             throws IOException, NoSuchMethodException, InstantiationException,
             IllegalAccessException, IllegalArgumentException, InvocationTargetException
@@ -272,26 +272,50 @@ public class MatrixMultiplicationSimulation {
         writer.write("Second player,");
         writer.write("Time(in seconds)\n");
 
-        for(int i = start_slice_size; i < max_slice_size; ++i)
+        for (long i: slices1)
         {
-            for (int j = start_slice_size; j < max_slice_size; ++j)
+            for (long j: slices2)
             {
-                System.out.println(String.format("Processing 1 - %d of %d 2 - %d of %d", i, max_slice_size, j, max_slice_size));
                 double time = simulateProblem(brokerClass, MipsCapacities, problem_size, i, j, debug_info);
-                writer.write(Integer.toString(i));
+                writer.write(Long.toString(i));
                 writer.write(',');
-                writer.write(Integer.toString(j));
+                writer.write(Long.toString(j));
                 writer.write(',');
                 writer.write(Double.toString(time));
                 writer.write('\n');
                 writer.flush();
             }
         }
+
         double end = System.nanoTime();
         System.out.println("Time for all simulations(in seconds) ");
         System.out.println(Double.toString((end-start)/1e9));
 
         writer.close();
+    }
+
+    static void simulate_all_combinations(Class brokerClass, List<Long> MipsCapacities,
+                         long problem_size, long start_slice, long max_slice,
+                         boolean debug_info)
+            throws IOException, NoSuchMethodException, InstantiationException,
+            IllegalAccessException, IllegalArgumentException, InvocationTargetException
+    {
+        List<Long> slices = new ArrayList<>((int)(max_slice-start_slice));
+        for(long i = start_slice; i < max_slice; ++i)
+            slices.add(i);
+        simulate(brokerClass, MipsCapacities, problem_size, slices, slices, debug_info);
+    }
+
+    static void simulate_random_uniform(Class brokerClass, List<Long> MipsCapacities,
+                                          long problem_size, long start_slice, long max_slice, long count,
+                                          boolean debug_info)
+            throws IOException, NoSuchMethodException, InstantiationException,
+            IllegalAccessException, IllegalArgumentException, InvocationTargetException
+    {
+        List<Long> slices = new ArrayList<>((int)(max_slice-start_slice));
+        for(long i = start_slice; i < max_slice; ++i)
+            slices.add(i);
+        simulate(brokerClass, MipsCapacities, problem_size, slices, slices, debug_info);
     }
 
     public static void main(String[] args)
@@ -305,18 +329,7 @@ public class MatrixMultiplicationSimulation {
             MipsCapacities.add(TAKEN_NOMINAL_MIPS*7);
 
             //Log.disable();
-            //sim1(SimpleSchedulers.MaxMaxScheduler.class ,MipsCapacities, 1000, 100, 20, true);
+            //all_combinations_simulate(SimpleSchedulers.MaxMaxScheduler.class ,MipsCapacities, 1000, 100, 20, true);
             simulateProblem(SimpleSchedulers.MaxMaxScheduler.class ,MipsCapacities, 1000, 100, 20, true);
-
-            //sim2(SimpleSchedulers.MaxMinScheduler.class, MipsCapacities, 5000, 5, 7);
-            //sim2(SimpleSchedulers.MaxMinScheduler.class, MipsCapacities, 5000, 50, 70);
-            //sim2(SimpleSchedulers.MaxMinScheduler.class, MipsCapacities, 5000, 200, 300);
-            //sim2(SimpleSchedulers.MaxMinScheduler.class, MipsCapacities, 5000, 700, 700);
-            //sim2(SimpleSchedulers.MaxMinScheduler.class, MipsCapacities, 5000, 1500, 1500);
-            //sim2(SimpleSchedulers.MaxMinScheduler.class, MipsCapacities, 5000, 900, 900);
-            //sim2(SimpleSchedulers.MaxMaxScheduler.class, MipsCapacities, 5000, 5000, 5000);
-            //sim2(SimpleSchedulers.MaxMaxScheduler.class, MipsCapacities, 10000, 100, 200);
-            //sim2(SimpleSchedulers.MaxMaxScheduler.class, MipsCapacities, 1000, 10, 20);
-            //sim2(DatacenterBrokerSimple.class, MipsCapacities, 10000, 100, 200);
     }
 }
