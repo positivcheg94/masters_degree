@@ -111,8 +111,8 @@ public class MatrixMultiplicationSimulation {
     // Returns MIPS estimation assuming double+double = 1 MI
     private static double CalculateOverallComplexity(long m, long n, long k, double mulComplexityMultiplication)
     {
-        return m*k*(n*mulComplexityMultiplication + n-1);
-        //return m*k*n*mulComplexityMultiplication;
+        //return m*k*(n*mulComplexityMultiplication + n-1);
+        return m*k*n*mulComplexityMultiplication;
     }
 
     private static List<Vm> createVmsWithMIPS(List<Long> MIPS) {
@@ -323,8 +323,14 @@ public class MatrixMultiplicationSimulation {
 
             Log.disable();
             //sim1(SimpleSchedulers.MaxMaxScheduler.class ,MipsCapacities, 1000, 500, 20);
-            sim2(SimpleSchedulers.MaxMaxScheduler.class, MipsCapacities, 10000, 100, 200);
-            sim2(SimpleSchedulers.MaxMaxScheduler.class, MipsCapacities, 10000, 10, 20);
+
+            sim2(SimpleSchedulers.MaxMinScheduler.class, MipsCapacities, 5000, 50, 70);
+            //sim2(SimpleSchedulers.MaxMinScheduler.class, MipsCapacities, 5000, 200, 300);
+            //sim2(SimpleSchedulers.MaxMinScheduler.class, MipsCapacities, 5000, 700, 700);
+            //sim2(SimpleSchedulers.MaxMinScheduler.class, MipsCapacities, 5000, 900, 900);
+            //sim2(SimpleSchedulers.MaxMaxScheduler.class, MipsCapacities, 5000, 5000, 5000);
+            //sim2(SimpleSchedulers.MaxMaxScheduler.class, MipsCapacities, 10000, 100, 200);
+            //sim2(SimpleSchedulers.MaxMaxScheduler.class, MipsCapacities, 1000, 10, 20);
             //sim2(DatacenterBrokerSimple.class, MipsCapacities, 10000, 100, 200);
     }
 }

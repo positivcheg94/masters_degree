@@ -7,7 +7,7 @@ import org.cloudbus.cloudsim.datacenters.DatacenterSimple;
 
 public class DataCenterSimpleFixed extends DatacenterSimple{
 
-    private static double small_period = 0.0001;
+    private double UpdatePeriodThreshold = 0.001;
     DataCenterSimpleFixed(Simulation simulation,
                           DatacenterCharacteristics characteristics,
                           VmAllocationPolicy vmAllocationPolicy)
@@ -15,10 +15,19 @@ public class DataCenterSimpleFixed extends DatacenterSimple{
         super(simulation, characteristics, vmAllocationPolicy);
     }
 
+    public void setUpdatePeriodThreshold(double value)
+    {
+        UpdatePeriodThreshold = value;
+    }
+
+    public double getUpdatePeriodThreshold()
+    {
+        return UpdatePeriodThreshold;
+    }
+
     @Override
     protected boolean isTimeToUpdateCloudletsProcessing()
     {
-        return getSimulation().clock() < 0.111 ||
-                getSimulation().clock() >= getLastProcessTime() + small_period;
+        return getSimulation().clock() < 0.111 || getSimulation().clock() >= getLastProcessTime() + UpdatePeriodThreshold;
     }
 }
