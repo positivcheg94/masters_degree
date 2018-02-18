@@ -24,6 +24,8 @@
 package simulations;
 
 import org.cloudbus.cloudsim.brokers.DatacenterBrokerSimple;
+import org.cloudbus.cloudsim.schedulers.cloudlet.CloudletSchedulerTimeShared;
+import org.cloudbus.cloudsim.schedulers.vm.VmSchedulerSpaceShared;
 import org.cloudbus.cloudsim.util.Log;
 import org.cloudbus.cloudsim.allocationpolicies.VmAllocationPolicySimple;
 import org.cloudbus.cloudsim.brokers.DatacenterBroker;
@@ -34,7 +36,6 @@ import org.cloudbus.cloudsim.core.Simulation;
 import org.cloudbus.cloudsim.datacenters.Datacenter;
 import org.cloudbus.cloudsim.datacenters.DatacenterCharacteristics;
 import org.cloudbus.cloudsim.datacenters.DatacenterCharacteristicsSimple;
-import org.cloudbus.cloudsim.datacenters.DatacenterSimple;
 import org.cloudbus.cloudsim.hosts.Host;
 import org.cloudbus.cloudsim.hosts.HostSimple;
 import org.cloudbus.cloudsim.provisioners.PeProvisionerSimple;
@@ -59,15 +60,23 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
+
+// Theoretical values:
+// machine can do ~ 10000000000 additions per second
+// so make it a nominal value
+
 public class MatrixMultiplicationSimulation {
-    private static final int HUGE_VALUE = 1000000000;
+    // Nominal MIPS (i7-6700K 1 core)
+    private static final long NOMINAL_MIPS = 10000000000L;
+    private static final long TAKEN_NOMINAL_MIPS = NOMINAL_MIPS;
+
     // Matrix multiplication complexity
     private static final double multiplicationComplexityMultiplier = 1.4;
-    private static final double additionMIPS = 0.00001;
 
     private static final int HOSTS = 1;
     private static final int HOST_PES = 100;
-    private static final int HOST_P_MIPS = HUGE_VALUE;
+    private static final long HUGE_VALUE = 10000000000000000L;
+    private static final long HOST_P_MIPS = TAKEN_NOMINAL_MIPS*1000;
 
     private static int counter = 0;
 
@@ -97,9 +106,13 @@ public class MatrixMultiplicationSimulation {
         return slice2;
     }
 
+    // Calculate complexity of (m,n) dot (n,k).
+    // In general - O(m*n*k)
+    // Returns MIPS estimation assuming double+double = 1 MI
     private static double CalculateOverallComplexity(long m, long n, long k, double mulComplexityMultiplication)
     {
-        return m*k*(n*n*mulComplexityMultiplication + n-1);
+        return m*k*(n*mulComplexityMultiplication + n-1);
+        //return m*k*n*mulComplexityMultiplication;
     }
 
     private static List<Vm> createVmsWithMIPS(List<Long> MIPS) {
@@ -108,6 +121,7 @@ public class MatrixMultiplicationSimulation {
             Vm vm =  new VmSimple(i, MIPS.get(i), 1)
                     .setRam(512).setBw(1000)
                     .setCloudletScheduler(new CloudletSchedulerSpaceShared());
+                    //.setCloudletScheduler(new CloudletSchedulerTimeShared());
             list.add(vm);
         }
         return list;
@@ -120,7 +134,7 @@ public class MatrixMultiplicationSimulation {
             hostList.add(host);
         }
         DatacenterCharacteristics characteristics = new DatacenterCharacteristicsSimple(hostList);
-        final Datacenter dc = new DatacenterSimple(sim, characteristics, new VmAllocationPolicySimple());
+        final Datacenter dc = new DataCenterSimpleFixed(sim, characteristics, new VmAllocationPolicySimple());
         return dc;
     }
 
@@ -131,12 +145,12 @@ public class MatrixMultiplicationSimulation {
             peList.add(new PeSimple(HOST_P_MIPS, new PeProvisionerSimple()));
         }
 
-        final long ram = HUGE_VALUE; //in Megabytes
-        final long bandwidth = HUGE_VALUE; //in Megabits/s
+        final long ram = 1000000; //in Megabytes
+        final long bandwidth = 10000000; //in Megabits/s
         final long storage = HUGE_VALUE; //in Megabytes
         ResourceProvisioner ramProvisioner = new ResourceProvisionerSimple();
         ResourceProvisioner bwProvisioner = new ResourceProvisionerSimple();
-        VmScheduler vmScheduler = new VmSchedulerTimeShared();
+        VmScheduler vmScheduler = new VmSchedulerSpaceShared();
         Host host = new HostSimple(ram, bandwidth, storage, peList);
         host.setRamProvisioner(ramProvisioner).setBwProvisioner(bwProvisioner).setVmScheduler(vmScheduler);
         return host;
@@ -158,13 +172,13 @@ public class MatrixMultiplicationSimulation {
         final List<Cloudlet> list = new ArrayList<>((int)n_cloudlets);
         UtilizationModel utilization = new UtilizationModelFull();
 
-        long full_complexity = (long)(additionMIPS*CalculateOverallComplexity(slice,n,slice,multiplicationComplexityMultiplier));
-        long p_complexity = (long)(additionMIPS*CalculateOverallComplexity(slice,n,partial_slice_size,multiplicationComplexityMultiplier));
-        long pp_complexity = (long)(additionMIPS*CalculateOverallComplexity(n,slice,n,multiplicationComplexityMultiplier));
+        long full_complexity = (long)(CalculateOverallComplexity(slice,n,slice,multiplicationComplexityMultiplier));
+        long p_complexity = (long)(CalculateOverallComplexity(slice,n,partial_slice_size,multiplicationComplexityMultiplier));
+        long pp_complexity = (long)(CalculateOverallComplexity(n,slice,n,multiplicationComplexityMultiplier));
 
         for (int i = 0; i < n_slices; i++)
         {
-            for (int j = 0; i < n_slices; i++)
+            for (int j = 0; j < n_slices; j++)
             {
                 list.add(new CloudletSimple(counter++, full_complexity, 1)
                         .setUtilizationModel(utilization));
@@ -209,29 +223,26 @@ public class MatrixMultiplicationSimulation {
 
         simulation.start();
 
-        List<Cloudlet> newList = broker.getCloudletFinishedList();
+        List<Cloudlet> received = broker.getCloudletFinishedList();
+        int sent_size = cloudlets.size();
+        int recv_size = received.size();
+        if(sent_size != recv_size)
+            System.out.println(String.format("%d != %d", sent_size, recv_size));
         return simulation.clock();
     }
 
-    static void sim1(Class brokerClass, int problem_size, int max_slice_size)
+    static void sim1(Class brokerClass, List<Long> MipsCapacities, int problem_size, int max_slice_size, int start_slice_size)
             throws IOException, NoSuchMethodException, InstantiationException,
             IllegalAccessException, IllegalArgumentException, InvocationTargetException
     {
-        Log.disable();
-
-        List<Long> MipsCapacities = new ArrayList<>();
-        MipsCapacities.add((long)(100000000));
-        MipsCapacities.add((long)(200021300));
-        MipsCapacities.add((long)(500023410));
-        MipsCapacities.add((long)(600240000));
-
         double start = System.nanoTime();
         double results[][] = new double[max_slice_size][];
-        for(int i = 1; i < max_slice_size; ++i)
+        for(int i = start_slice_size; i < max_slice_size; ++i)
         {
             double[] results_i = new double[max_slice_size];
-            for (int j = 1; j < max_slice_size; ++j)
+            for (int j = start_slice_size; j < max_slice_size; ++j)
             {
+                System.out.println(String.format("Processing 1 - %d of %d 2 - %d of %d", i, max_slice_size, j, max_slice_size));
                 results_i[j] = simulateProblem(brokerClass, problem_size, i, j, MipsCapacities);
             }
             results[i] = results_i;
@@ -245,8 +256,8 @@ public class MatrixMultiplicationSimulation {
         writer.write("Second player,");
         writer.write("Time(in seconds)");
         writer.write('\n');
-        for(int i = 1; i < max_slice_size; ++i) {
-            for (int j = 1; j < max_slice_size; ++j) {
+        for(int i = start_slice_size; i < max_slice_size; ++i) {
+            for (int j = start_slice_size; j < max_slice_size; ++j) {
                 writer.write(Integer.toString(i));
                 writer.write(',');
                 writer.write(Integer.toString(j));
@@ -258,16 +269,10 @@ public class MatrixMultiplicationSimulation {
         writer.close();
     }
 
-    static void sim2(Class brokerClass, int problem_size, int slice_size1, int slice_size2)
+    static void sim2(Class brokerClass, List<Long> MipsCapacities, int problem_size, int slice_size1, int slice_size2)
             throws IOException, NoSuchMethodException, InstantiationException,
             IllegalAccessException, IllegalArgumentException, InvocationTargetException
     {
-        List<Long> MipsCapacities = new ArrayList<>();
-        MipsCapacities.add((long)(100000000));
-        MipsCapacities.add((long)(200021300));
-        MipsCapacities.add((long)(500023410));
-        MipsCapacities.add((long)(600240000));
-
         MatrixMultiplicationSimulation MMS = new MatrixMultiplicationSimulation(problem_size, slice_size1, slice_size2);
 
         CloudSim simulation = new CloudSim();
@@ -280,21 +285,28 @@ public class MatrixMultiplicationSimulation {
         List<Vm> vmList = createVmsWithMIPS(MipsCapacities);
         broker.submitVmList(vmList);
 
+        double start = System.nanoTime();
         List<Cloudlet> cloudlets = createCloudlets(MMS.problemSize(), MMS.getSlise1());
         cloudlets.addAll(createCloudlets(MMS.problemSize(), MMS.getSlise2()));
+        double end = System.nanoTime();
+        System.out.println("Cloudlet creation duration ");
+        System.out.println(Double.toString((end-start)/1e9));
+        System.out.println(String.format("Submited %d cloudlets", cloudlets.size()));
 
         broker.submitCloudletList(cloudlets);
 
+        start = System.nanoTime();
         simulation.start();
+        end = System.nanoTime();
+        System.out.println(String.format("Simulation duration %f seconds", (end-start)/1e9));
+        System.out.println(String.format("Simulation internal duration %f seconds", simulation.clock()));
+
         List<Cloudlet> received = broker.getCloudletFinishedList();
+        System.out.println(String.format("Received %d cloudlets", received.size()));
 
         received.sort((o1, o2) -> (int)(o1.getExecStartTime() - o2.getExecStartTime()));
+        new CloudletsTableBuilder(cloudlets).build();
         new CloudletsTableBuilder(received).build();
-
-        System.out.println(String.format("Submited %d cloudlets", cloudlets.size()));
-        System.out.println(String.format("Received %d cloudlets", received.size()));
-        System.out.println("Elapsed");
-        System.out.println(Double.toString(simulation.clock()));
     }
 
 
@@ -303,11 +315,16 @@ public class MatrixMultiplicationSimulation {
             throws IOException, NoSuchMethodException, InstantiationException,
             IllegalAccessException, IllegalArgumentException, InvocationTargetException
         {
+            List<Long> MipsCapacities = new ArrayList<>();
+            MipsCapacities.add(TAKEN_NOMINAL_MIPS);
+            MipsCapacities.add(TAKEN_NOMINAL_MIPS*2);
+            MipsCapacities.add(TAKEN_NOMINAL_MIPS*3);
+            MipsCapacities.add(TAKEN_NOMINAL_MIPS*7);
+
             Log.disable();
-            sim2(SimpleSchedulers.MaxMinScheduler.class , 10000, 5, 5);
-            //sim2(SimpleSchedulers.MaxMaxScheduler.class , 10000, 50, 70);
-            //sim2(SimpleSchedulers.MinMinScheduler.class , 10000, 50, 70);
-            //sim2(SimpleSchedulers.MinMaxScheduler.class , 10000, 50, 70);
-            sim2(DatacenterBrokerSimple.class           , 10000, 5, 7);
+            //sim1(SimpleSchedulers.MaxMaxScheduler.class ,MipsCapacities, 1000, 500, 20);
+            sim2(SimpleSchedulers.MaxMaxScheduler.class, MipsCapacities, 10000, 100, 200);
+            sim2(SimpleSchedulers.MaxMaxScheduler.class, MipsCapacities, 10000, 10, 20);
+            //sim2(DatacenterBrokerSimple.class, MipsCapacities, 10000, 100, 200);
     }
 }
