@@ -8,6 +8,5 @@
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="library" name="org.cloudsimplus:cloudsim-plus:1.2.5" level="project" />
-    <orderEntry type="library" name="org.ejml:ejml-all:0.32" level="project" />
   </component>
 </module>
