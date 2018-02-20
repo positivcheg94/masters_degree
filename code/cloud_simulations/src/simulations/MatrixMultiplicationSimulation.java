@@ -57,8 +57,8 @@ import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
+import java.util.Random;
 
 
 // Theoretical values:
@@ -260,14 +260,15 @@ public class MatrixMultiplicationSimulation {
     }
 
     static void simulate(Class brokerClass, List<Long> MipsCapacities,
-                      long problem_size, Iterable<Long> slices1, Iterable<Long> slices2,
-                      boolean debug_info)
+                         long problem_size, Iterable<Long> slices1, Iterable<Long> slices2,
+                         String resulting_filename,
+                         boolean debug_info)
             throws IOException, NoSuchMethodException, InstantiationException,
             IllegalAccessException, IllegalArgumentException, InvocationTargetException
     {
         double start = System.nanoTime();
 
-        FileWriter writer = new FileWriter("results.txt", false);
+        FileWriter writer = new FileWriter(resulting_filename, false);
         writer.write("First player,");
         writer.write("Second player,");
         writer.write("Time(in seconds)\n");
@@ -294,42 +295,62 @@ public class MatrixMultiplicationSimulation {
         writer.close();
     }
 
-    static void simulate_all_combinations(Class brokerClass, List<Long> MipsCapacities,
-                         long problem_size, long start_slice, long max_slice,
-                         boolean debug_info)
+    static void simulate_full(Class brokerClass, List<Long> MipsCapacities,
+                              long problem_size, long start_slice, long max_slice,
+                              String resulting_filename,
+                              boolean debug_info)
             throws IOException, NoSuchMethodException, InstantiationException,
             IllegalAccessException, IllegalArgumentException, InvocationTargetException
     {
         List<Long> slices = new ArrayList<>((int)(max_slice-start_slice));
         for(long i = start_slice; i < max_slice; ++i)
             slices.add(i);
-        simulate(brokerClass, MipsCapacities, problem_size, slices, slices, debug_info);
+        simulate(brokerClass, MipsCapacities, problem_size, slices, slices, resulting_filename, debug_info);
     }
 
-    static void simulate_random_uniform(Class brokerClass, List<Long> MipsCapacities,
-                                          long problem_size, long start_slice, long max_slice, long count,
-                                          boolean debug_info)
+    // maybe do random slice list uniformly distributed?
+    static void simulate_urandom(Class brokerClass, List<Long> MipsCapacities,
+                                 long problem_size, long start_slice, long max_slice, long count,
+                                 String resulting_filename,
+                                 boolean debug_info)
             throws IOException, NoSuchMethodException, InstantiationException,
             IllegalAccessException, IllegalArgumentException, InvocationTargetException
     {
         List<Long> slices = new ArrayList<>((int)(max_slice-start_slice));
         for(long i = start_slice; i < max_slice; ++i)
             slices.add(i);
-        simulate(brokerClass, MipsCapacities, problem_size, slices, slices, debug_info);
+        simulate(brokerClass, MipsCapacities, problem_size, slices, slices, resulting_filename, debug_info);
+    }
+
+    static void simulate_step(Class brokerClass, List<Long> MipsCapacities,
+                              long problem_size, long start_slice, long max_slice, long step,
+                              String resulting_filename,
+                              boolean debug_info)
+            throws IOException, NoSuchMethodException, InstantiationException,
+            IllegalAccessException, IllegalArgumentException, InvocationTargetException
+    {
+        List<Long> slices = new ArrayList<>((int)(max_slice-start_slice));
+        for(long i = start_slice; i < max_slice; i+=step)
+            slices.add(i);
+        simulate(brokerClass, MipsCapacities, problem_size, slices, slices, resulting_filename, debug_info);
     }
 
     public static void main(String[] args)
             throws IOException, NoSuchMethodException, InstantiationException,
             IllegalAccessException, IllegalArgumentException, InvocationTargetException
         {
+            final boolean all_debug = false;
+            Log.disable();
+
             List<Long> MipsCapacities = new ArrayList<>();
             MipsCapacities.add(TAKEN_NOMINAL_MIPS);
             MipsCapacities.add(TAKEN_NOMINAL_MIPS*2);
             MipsCapacities.add(TAKEN_NOMINAL_MIPS*3);
             MipsCapacities.add(TAKEN_NOMINAL_MIPS*7);
 
-            //Log.disable();
-            //all_combinations_simulate(SimpleSchedulers.MaxMaxScheduler.class ,MipsCapacities, 1000, 100, 20, true);
-            simulateProblem(SimpleSchedulers.MaxMaxScheduler.class ,MipsCapacities, 1000, 100, 20, true);
+            //simulate_step(SimpleSchedulers.MaxMaxScheduler.class ,MipsCapacities, 10000, 200, 9000, 20, "MaxMax.txt", all_debug);
+            //simulate_step(SimpleSchedulers.MaxMinScheduler.class ,MipsCapacities, 10000, 200, 9000, 20, "MaxMin.txt", all_debug);
+            simulate_step(SimpleSchedulers.MinMaxScheduler.class ,MipsCapacities, 10000, 200, 9000, 20, "MinMax.txt", all_debug);
+            simulate_step(SimpleSchedulers.MinMinScheduler.class ,MipsCapacities, 10000, 200, 9000, 20, "MinMin.txt", all_debug);
     }
 }

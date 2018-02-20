@@ -27,7 +27,12 @@ public class CloudSimComparators
     {
         public int compare(Cloudlet c1, Cloudlet c2)
         {
-            return (int)(c1.getLength() - c2.getLength());
+            if(c1.getLength() > c2.getLength())
+                return 1;
+            else if (c2.getLength() > c1.getLength())
+                return -1;
+            else
+                return 0;
         }
     }
 
@@ -35,9 +40,13 @@ public class CloudSimComparators
     {
         public int compare(Cloudlet c1, Cloudlet c2)
         {
-            if (c2.getLength() == c1.getLength())
+
+            if(c2.getLength() > c1.getLength())
+                return 1;
+            else if (c1.getLength() > c2.getLength())
+                return -1;
+            else
                 return 0;
-            return c2.getLength() - c1.getLength() > 0 ? 1 : -1;
         }
     }
 }
