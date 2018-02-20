@@ -1,4 +1,4 @@
-package simulations;
+package com.simulations.matrix;
 
 import org.cloudbus.cloudsim.allocationpolicies.VmAllocationPolicy;
 import org.cloudbus.cloudsim.core.CloudSimTags;
@@ -9,8 +9,8 @@ import org.cloudbus.cloudsim.hosts.Host;
 
 public class DataCenterSimpleFixed extends DatacenterSimple{
 
-    private double UpdatePeriodThreshold;
-    private static double UpdatePeriodThresholdAddition = 0.01;
+    private double UpdatePeriodThreshold = 0.01;
+    private static double UpdatePeriodThresholdAddition = 0.0001;
     private boolean can_schedule_after_period = true;
 
     //private double UpdatePeriodThreshold = 0.001;
@@ -19,7 +19,6 @@ public class DataCenterSimpleFixed extends DatacenterSimple{
                           VmAllocationPolicy vmAllocationPolicy)
     {
         super(simulation, characteristics, vmAllocationPolicy);
-        UpdatePeriodThreshold = simulation.getMinTimeBetweenEvents() + UpdatePeriodThresholdAddition;
     }
 
     public void setUpdatePeriodThreshold(double value)
@@ -61,6 +60,25 @@ public class DataCenterSimpleFixed extends DatacenterSimple{
                     CloudSimTags.VM_UPDATE_CLOUDLET_PROCESSING_EVENT);
         }
         setLastProcessTime(getSimulation().clock());
+        return nextSimulationTime;
+    }
+
+    @Override
+    protected double updateHostsProcessing() {
+        double nextSimulationTime = Double.MAX_VALUE;
+        for (final Host host : getHostList()) {
+            final double time = host.updateProcessing(getSimulation().clock());
+            nextSimulationTime = Math.min(time, nextSimulationTime);
+        }
+
+        // Guarantees a minimal interval before scheduling the event
+        final double minTimeBetweenEvents = UpdatePeriodThreshold + UpdatePeriodThresholdAddition;
+        nextSimulationTime = Math.max(nextSimulationTime, minTimeBetweenEvents);
+
+        if (nextSimulationTime == Double.MAX_VALUE) {
+            return nextSimulationTime;
+        }
+
         return nextSimulationTime;
     }
 }

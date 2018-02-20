@@ -10,8 +10,14 @@
 **/.idea/**/sqlDataSources.xml
 **/.idea/**/dynamic.xml
 **/.idea/**/uiDesigner.xml
+**/.idea/**/libraries/*
+
+# Gradle:
+.idea/**/gradle.xml
 
 ## File-based project format:
 **/*.iws
+
+code/cloud_simulations/target/**
 
 *.class

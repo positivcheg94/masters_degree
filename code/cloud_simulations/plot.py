@@ -5,27 +5,21 @@ import numpy as np
 from plotly import offline as pltly
 from plotly import graph_objs as pltly_obj
 
-def plot_results(fpath, fname, subset_ratio = 0.005):
+def plot_results(fpath, fname):
     fname_noex = fname[:fname.rfind(".")]
     
     data = np.loadtxt(path.join(fpath, fname), skiprows=1, delimiter=',')
     
-    idx = np.random.choice([True,False], size=len(data), p=[subset_ratio,1-subset_ratio])
-    subdata = data[idx]
-    x, y, time = subdata[:,0], subdata[:,1], subdata[:,2]
+    x, y, time = data[:,0], data[:,1], data[:,2]
     
     trace1 = pltly_obj.Scatter3d(
-        x=x,
-        y=y,
-        z=time,
-        mode='markers',
-        marker=dict(
-            size=3,
-            color=time,
-            colorscale='Viridis',
-            opacity=0.8
+            x=x,
+            y=y,
+            z=time,
+            mode='markers',
+            marker={'size':2, 'color':time, 'colorscale':'Jet'},
+            stream={'maxpoints':20}
         )
-    )
         
     pltly.plot([trace1], filename=fname_noex+".html", auto_open=False)
 
