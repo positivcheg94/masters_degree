@@ -1,0 +1,1 @@
+java -jar .\matrixsim-0.1.jar --mips=1,3,5,7 --scheduler=maxmin --step_size=5 --problem_size=5000 --output=maxmin.txt
