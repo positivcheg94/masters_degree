@@ -1,19 +1,25 @@
 package com.simulations.matrix;
 
 import org.cloudbus.cloudsim.allocationpolicies.VmAllocationPolicy;
+import org.cloudbus.cloudsim.cloudlets.Cloudlet;
+import org.cloudbus.cloudsim.cloudlets.CloudletExecution;
 import org.cloudbus.cloudsim.core.CloudSimTags;
 import org.cloudbus.cloudsim.core.Simulation;
 import org.cloudbus.cloudsim.datacenters.DatacenterCharacteristics;
 import org.cloudbus.cloudsim.datacenters.DatacenterSimple;
 import org.cloudbus.cloudsim.hosts.Host;
+import org.cloudbus.cloudsim.schedulers.cloudlet.CloudletScheduler;
+import org.cloudbus.cloudsim.vms.Vm;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class DataCenterSimpleFixed extends DatacenterSimple{
 
-    private double UpdatePeriodThreshold = 0.01;
+    private double UpdatePeriodThreshold = 0.001;
     private static double UpdatePeriodThresholdAddition = 0.0001;
     private boolean can_schedule_after_period = true;
 
-    //private double UpdatePeriodThreshold = 0.001;
     DataCenterSimpleFixed(Simulation simulation,
                           DatacenterCharacteristics characteristics,
                           VmAllocationPolicy vmAllocationPolicy)
@@ -80,5 +86,19 @@ public class DataCenterSimpleFixed extends DatacenterSimple{
         }
 
         return nextSimulationTime;
+    }
+
+    @Override
+    public void checkCloudletsCompletionForGivenVm(Vm vm) {
+        CloudletScheduler cl_scheduler = vm.getCloudletScheduler();
+        List<CloudletExecution> finishedList = cl_scheduler.getCloudletFinishedList();
+        if(finishedList.size() > 0) {
+            Cloudlet cl = finishedList.get(finishedList.size() - 1).getCloudlet();
+            if(!cl_scheduler.isCloudletReturned(cl))
+            {
+                this.sendNow(cl.getBroker().getId(), 20, cl);
+                cl_scheduler.addCloudletToReturnedList(cl);
+            }
+        }
     }
 }

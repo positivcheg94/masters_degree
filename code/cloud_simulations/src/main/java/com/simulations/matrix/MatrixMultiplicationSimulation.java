@@ -32,6 +32,8 @@ import java.lang.reflect.InvocationTargetException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import static java.util.concurrent.Executors.newFixedThreadPool;
 
@@ -41,6 +43,16 @@ import static java.util.concurrent.Executors.newFixedThreadPool;
 // so make it a nominal value
 
 public class MatrixMultiplicationSimulation {
+    private static final Map<String, Class> scheduler_mapper = new HashMap<>();
+    static
+    {
+        scheduler_mapper.put("minmin",  SimpleSchedulers.MinMinScheduler.class);
+        scheduler_mapper.put("minmax",  SimpleSchedulers.MinMaxScheduler.class);
+        scheduler_mapper.put("maxmin",  SimpleSchedulers.MaxMinScheduler.class);
+        scheduler_mapper.put("maxmax",  SimpleSchedulers.MaxMaxScheduler.class);
+        scheduler_mapper.put("all_mt", null);
+    }
+
     // Nominal MIPS (i7-6700K 1 core)
     private static final long NOMINAL_MIPS = 10000000000L;
 
@@ -152,8 +164,6 @@ public class MatrixMultiplicationSimulation {
         return host;
     }
 
-
-
     private static List<Cloudlet> createCloudlets(int userid, long n, long slice)
     {
         long n_slices = n/slice;
@@ -206,7 +216,7 @@ public class MatrixMultiplicationSimulation {
 
         double start, end;
 
-        CloudSim simulation = new CloudSim(2, new GregorianCalendar(), false, 0.0001);
+        CloudSim simulation = new CloudSim(-1, new GregorianCalendar(), false, 0.0001);
 
         Datacenter datacenter = createDatacenter(simulation);
 
@@ -242,8 +252,16 @@ public class MatrixMultiplicationSimulation {
         {
             System.out.println(String.format("Received %d cloudlets", received.size()));
         }
-        if(received.size() != cloudlets.size())
-            throw new RuntimeException("NOT AGAIN");
+        if(received.size() != cloudlets.size()) {
+            throw new RuntimeException(
+                    String.format(
+                            "Cloudlet processing corruption.\n" +
+                            "Simulation case:\n" +
+                            "Scheduler: %s. Problem size: %d. Slice size1: %d. Slice size2: %d.",
+                            brokerClass.getName(), MMS.problemSize(), MMS.getSlise1(), MMS.getSlise2()
+                    )
+            );
+        }
         received.sort((o1, o2) -> (Double.compare(o2.getFinishTime(),o1.getFinishTime())));
 
         double times[] = new double[2];
@@ -275,7 +293,7 @@ public class MatrixMultiplicationSimulation {
         double last_arrival_time = Math.max(times[0], times[1]);
         double last_arrival_time2 = received.stream().mapToDouble(cl -> cl.getFinishTime()).max().getAsDouble();
         if(last_arrival_time != last_arrival_time2)
-            throw new RuntimeException("WTF");
+            throw new RuntimeException("Arrival time corruption");
 
 
         // DEBUG INFO
@@ -303,12 +321,13 @@ public class MatrixMultiplicationSimulation {
             FileWriter writer = new FileWriter(resulting_filename, false);
             DateFormat dateFormat = new SimpleDateFormat("yyyy.MM.dd HH:mm:ss");
             Date date = new Date();
-            writer.write(String.format("Starting time: %s", dateFormat.format(date)));
-            writer.write(String.format("Using scheduler %s", brokerClass.getName()));
+            writer.write(String.format("Starting time: %s\n", dateFormat.format(date)));
+            writer.write(String.format("Using scheduler %s\n", brokerClass.getName()));
             writer.write("First player,");
             writer.write("Second player,");
             writer.write("TimeFirst(in seconds)");
             writer.write("TimeSecond(in seconds)\n");
+            writer.flush();
 
             for (long i : slices1) {
                 for (long j : slices2) {
@@ -431,7 +450,7 @@ public class MatrixMultiplicationSimulation {
                             .longOpt("scheduler")
                             .hasArg(true)
                             .required(false)
-                            .desc("scheduler type [ minmin, minmax, maxmin, maxmax]")
+                            .desc("scheduler type: minmin, minmax, maxmin, maxmax")
                             .build()
             );
             options.addOption(
@@ -443,13 +462,11 @@ public class MatrixMultiplicationSimulation {
                             .desc(String.format("comma separated mips capacities as multiplication of nominal ( %d )", NOMINAL_MIPS))
                     .build()
             );
-            HelpFormatter formatter = new HelpFormatter();
-            formatter.printHelp( "simulations", options );
-
             CommandLineParser parser = new DefaultParser();
             try
             {
                 CommandLine line = parser.parse( options, args );
+
                 final boolean print_debug = line.hasOption("debug") ? true : false;
                 if(!line.hasOption("print_logs"))
                     Log.disable();
@@ -457,24 +474,7 @@ public class MatrixMultiplicationSimulation {
 
                 Class brokerClass = null;
                 String broker_class_str=line.getOptionValue("scheduler", "minmax");
-                switch (broker_class_str.toLowerCase())
-                {
-                    case "minmin":
-                        brokerClass = SimpleSchedulers.MinMinScheduler.class;
-                        break;
-                    case "minmax":
-                        brokerClass = SimpleSchedulers.MinMaxScheduler.class;
-                        break;
-                    case "maxmin":
-                        brokerClass = SimpleSchedulers.MaxMinScheduler.class;
-                        break;
-                    case "maxmax":
-                        brokerClass = SimpleSchedulers.MaxMaxScheduler.class;
-                        break;
-                    default:
-                        System.err.println(String.format("Wrong scheduler picked: %s. Using default minmax.",broker_class_str));
-                        brokerClass = SimpleSchedulers.MaxMinScheduler.class;
-                }
+                brokerClass = scheduler_mapper.getOrDefault(broker_class_str.toLowerCase(),SimpleSchedulers.MaxMinScheduler.class);
 
                 String[] mipss_str = line.getOptionValues("mips");
                 List<Long> MipsCapacities = new ArrayList<>();
@@ -483,40 +483,56 @@ public class MatrixMultiplicationSimulation {
 
                 final long n = Long.parseLong(line.getOptionValue("problem_size", "1000"));
                 final long step = Long.parseLong(line.getOptionValue("step_size", "5"));
-                long start_slice = 0;
+                final long start_slice;
                 if(line.hasOption("start_slice")){
                     start_slice = Long.parseLong(line.getOptionValue("start_slice"));
                 }
                 else {
                     start_slice = Math.max(n/200, 50);
                 }
-                long max_slice = 0;
+                final long max_slice;
                 if(line.hasOption("start_slice")){
-                    start_slice = Long.parseLong(line.getOptionValue("max_slice"));
+                    max_slice = Long.parseLong(line.getOptionValue("max_slice"));
                 }
                 else {
                     max_slice = 3*n/4;
                 }
 
+                switch (broker_class_str)
+                {
+                    case "all_mt": {
+                        ExecutorService es = newFixedThreadPool(4);
+                        int counter = 1;
+                        for (Class current_scheduler : scheduler_mapper.values()) {
+                            String filename = String.format("results%d.txt", counter++);
+                            es.execute(() -> simulate_step(current_scheduler, MipsCapacities, n, start_slice, max_slice, step, filename, print_debug));
+                        }
+                        es.shutdown();
+                        try {
+                            es.awaitTermination(Long.MAX_VALUE, TimeUnit.SECONDS);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                        break;
+                    }
+                    case "all_st": {
+                        int counter = 1;
+                        for (Class current_scheduler : scheduler_mapper.values()) {
+                            String filename = String.format("results%d.txt", counter++);
+                            simulate_step(current_scheduler, MipsCapacities, n, start_slice, max_slice, step, filename, print_debug);
+                        }
+                        break;
+                    }
+                    default:
+                        simulate_step(brokerClass, MipsCapacities, n, start_slice, max_slice, step, output_filename, print_debug);
 
-                simulate_step(brokerClass, MipsCapacities, n, start_slice, max_slice, step, output_filename, print_debug);
+                }
             }
             catch( ParseException exp )
             {
                 System.err.println( "Parsing failed.  Reason: " + exp.getMessage() );
+                HelpFormatter formatter = new HelpFormatter();
+                formatter.printHelp( "matrixsim", options );
             }
-            /*
-            ExecutorService es = newFixedThreadPool(4);
-            es.execute(()-> simulate_step(SimpleSchedulers.MaxMaxScheduler.class ,MipsCapacities, n, start_slice, max_slice, step, "MaxMax.txt", all_debug));
-            es.execute(()-> simulate_step(SimpleSchedulers.MinMaxScheduler.class ,MipsCapacities, n, start_slice, max_slice, step, "MinMax.txt", all_debug));
-            es.execute(()-> simulate_step(SimpleSchedulers.MaxMinScheduler.class ,MipsCapacities, n, start_slice, max_slice, step, "MaxMin.txt", all_debug));
-            es.execute(()-> simulate_step(SimpleSchedulers.MinMinScheduler.class ,MipsCapacities, n, start_slice, max_slice, step, "MinMin.txt", all_debug));
-            es.shutdown();
-            try {
-                es.awaitTermination(Long.MAX_VALUE, TimeUnit.SECONDS);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-            //*/
     }
 }
