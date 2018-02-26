@@ -34,6 +34,7 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 
 import static java.util.concurrent.Executors.newFixedThreadPool;
 
@@ -166,6 +167,8 @@ public class MatrixMultiplicationSimulation {
 
     private static List<Cloudlet> createCloudlets(int userid, long n, long slice)
     {
+        if(slice==0)
+            return new ArrayList<>();
         long n_slices = n/slice;
         boolean partial_slice = n%slice != 0;
         long partial_slice_size = n - n_slices*slice;
@@ -373,6 +376,17 @@ public class MatrixMultiplicationSimulation {
     }
 
     static void simulate_step(Class brokerClass, List<Long> MipsCapacities,
+                                 long problem_size, long start_slice, long max_slice, long step,
+                                 String resulting_filename,
+                                 boolean debug_info)
+    {
+        List<Long> slices = new ArrayList<>((int)(max_slice-start_slice));
+        for(long i = start_slice; i < max_slice; i+=step)
+            slices.add(i);
+        simulate(brokerClass, MipsCapacities, problem_size, slices, slices, resulting_filename, debug_info);
+    }
+
+    static void simulate_step_single(Class brokerClass, List<Long> MipsCapacities,
                               long problem_size, long start_slice, long max_slice, long step,
                               String resulting_filename,
                               boolean debug_info)
@@ -380,7 +394,9 @@ public class MatrixMultiplicationSimulation {
         List<Long> slices = new ArrayList<>((int)(max_slice-start_slice));
         for(long i = start_slice; i < max_slice; i+=step)
             slices.add(i);
-        simulate(brokerClass, MipsCapacities, problem_size, slices, slices, resulting_filename, debug_info);
+        List<Long> empty_slices = new ArrayList<>();
+        empty_slices.add(0L);
+        simulate(brokerClass, MipsCapacities, problem_size, slices, empty_slices, resulting_filename, debug_info);
     }
 
     public static void main(String[] args)
@@ -395,6 +411,14 @@ public class MatrixMultiplicationSimulation {
                             .required(false)
                             .desc("print debug information")
                     .build()
+            );
+            options.addOption(
+                    Option.builder()
+                            .longOpt("single")
+                            .hasArg(false)
+                            .required(false)
+                            .desc("single player")
+                            .build()
             );
             options.addOption(
                     Option.builder("o")
@@ -491,7 +515,7 @@ public class MatrixMultiplicationSimulation {
                     start_slice = Math.max(n/200, 50);
                 }
                 final long max_slice;
-                if(line.hasOption("start_slice")){
+                if(line.hasOption("max_slice")){
                     max_slice = Long.parseLong(line.getOptionValue("max_slice"));
                 }
                 else {
@@ -519,12 +543,18 @@ public class MatrixMultiplicationSimulation {
                         int counter = 1;
                         for (Class current_scheduler : scheduler_mapper.values()) {
                             String filename = String.format("results%d.txt", counter++);
-                            simulate_step(current_scheduler, MipsCapacities, n, start_slice, max_slice, step, filename, print_debug);
+                            if(line.hasOption("single"))
+                                simulate_step_single(brokerClass, MipsCapacities, n, start_slice, max_slice, step, filename, print_debug);
+                            else
+                                simulate_step(brokerClass, MipsCapacities, n, start_slice, max_slice, step, filename, print_debug);
                         }
                         break;
                     }
                     default:
-                        simulate_step(brokerClass, MipsCapacities, n, start_slice, max_slice, step, output_filename, print_debug);
+                        if(line.hasOption("single"))
+                            simulate_step_single(brokerClass, MipsCapacities, n, start_slice, max_slice, step, output_filename, print_debug);
+                        else
+                            simulate_step(brokerClass, MipsCapacities, n, start_slice, max_slice, step, output_filename, print_debug);
 
                 }
             }

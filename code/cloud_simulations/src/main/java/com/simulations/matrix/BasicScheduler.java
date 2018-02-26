@@ -48,11 +48,6 @@ public class BasicScheduler extends DatacenterBrokerAbstract {
     }
 
     @Override
-    public void processEvent(SimEvent ev) {
-        super.processEvent(ev);
-    }
-
-    @Override
     protected void processCloudletReturn(SimEvent ev) {
         final Cloudlet c = (Cloudlet) ev.getData();
         finishedCloudlets.add(c);
@@ -97,18 +92,8 @@ public class BasicScheduler extends DatacenterBrokerAbstract {
         Cloudlet cloudlet = waiting.remove(0);
         cloudlet.setVm(vm);
         send(getVmDatacenter(vm).getId(), 0.0, CloudSimTags.CLOUDLET_SUBMIT_ACK, cloudlet);
-
-        final String delayStr = cloudlet.getSubmissionDelay() > 0 ?
-                String.format(" with a requested delay of %.0f seconds", cloudlet.getSubmissionDelay()) : "";
-
-        println(String.format("%.2f: %s: Sending %s %d to %s in %s%s.",
-                getSimulation().clock(), getName(), cloudlet.getClass().getSimpleName(), cloudlet.getId(),
-                vm, vm.getHost(), delayStr));
         ++runningCloudlets;
 
-        // remove created cloudlets from waiting list
-        waiting.remove(cloudlet);
-        submittedCloudlets.add(cloudlet);
         return true;
     }
 
