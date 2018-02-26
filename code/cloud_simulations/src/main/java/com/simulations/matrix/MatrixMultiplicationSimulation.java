@@ -58,14 +58,12 @@ public class MatrixMultiplicationSimulation {
     private static final long NOMINAL_MIPS = 10000000000L;
 
     // Matrix multiplication complexity
-    private static final double multiplicationComplexityMultiplier = 1.4;
+    private static final double multiplicationComplexityMultiplier = 1.;
 
     private static final int HOSTS = 1;
     private static final int HOST_PES = 100;
     private static final long HUGE_VALUE = 10000000000000000L;
     private static final long HOST_P_MIPS = NOMINAL_MIPS*1000;
-
-    private static int counter = 0;
 
     //members
     private final long problem_size;
@@ -165,13 +163,13 @@ public class MatrixMultiplicationSimulation {
         return host;
     }
 
-    private static List<Cloudlet> createCloudlets(int userid, long n, long slice)
+    private static List<Cloudlet> createCloudlets(int userid, long n, long n1, Integer counter)
     {
-        if(slice==0)
+        if(n1==0)
             return new ArrayList<>();
-        long n_slices = n/slice;
-        boolean partial_slice = n%slice != 0;
-        long partial_slice_size = n - n_slices*slice;
+        long n_slices = n/n1;
+        boolean partial_slice = n%n1 != 0;
+        long n2 = n - n_slices*n1;
 
         long n_cloudlets = n_slices*n_slices;
         if(partial_slice)
@@ -182,9 +180,9 @@ public class MatrixMultiplicationSimulation {
         final List<Cloudlet> list = new ArrayList<>((int)n_cloudlets);
         UtilizationModel utilization = new UtilizationModelFull();
 
-        long full_complexity = (long)(CalculateOverallComplexity(slice,n,slice,multiplicationComplexityMultiplier));
-        long p_complexity = (long)(CalculateOverallComplexity(slice,n,partial_slice_size,multiplicationComplexityMultiplier));
-        long pp_complexity = (long)(CalculateOverallComplexity(n,slice,n,multiplicationComplexityMultiplier));
+        long full_complexity = (long)(CalculateOverallComplexity(n1,n,n1,multiplicationComplexityMultiplier));
+        long p_complexity = (long)(CalculateOverallComplexity(n1,n,n2,multiplicationComplexityMultiplier));
+        long pp_complexity = (long)(CalculateOverallComplexity(n2,n,n2,multiplicationComplexityMultiplier));
 
         for (int i = 0; i < n_slices; i++)
         {
@@ -231,8 +229,9 @@ public class MatrixMultiplicationSimulation {
 
         start = System.nanoTime();
         List<Cloudlet> cloudlets = new ArrayList<>();
-        cloudlets.addAll(createCloudlets(0, MMS.problemSize(), MMS.getSlise1()));
-        cloudlets.addAll(createCloudlets(1, MMS.problemSize(), MMS.getSlise2()));
+        Integer counter = 0;
+        cloudlets.addAll(createCloudlets(0, MMS.problemSize(), MMS.getSlise1(), counter));
+        cloudlets.addAll(createCloudlets(1, MMS.problemSize(), MMS.getSlise2(), counter));
         end = System.nanoTime();
 
         // DEBUG INFO
@@ -480,6 +479,15 @@ public class MatrixMultiplicationSimulation {
                             .valueSeparator(',')
                             .desc(String.format("comma separated mips capacities as multiplication of nominal ( %d )", NOMINAL_MIPS))
                     .build()
+            );
+            options.addOption(
+                    Option.builder()
+                            .longOpt("mips")
+                            .hasArgs()
+                            .required()
+                            .valueSeparator(',')
+                            .desc(String.format("comma separated mips capacities as multiplication of nominal ( %d )", NOMINAL_MIPS))
+                            .build()
             );
             CommandLineParser parser = new DefaultParser();
             try
