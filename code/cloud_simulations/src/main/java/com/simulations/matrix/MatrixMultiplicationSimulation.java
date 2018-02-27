@@ -163,7 +163,7 @@ public class MatrixMultiplicationSimulation {
         return host;
     }
 
-    private static List<Cloudlet> createCloudlets(int userid, long n, long n1, Integer counter)
+    private static List<Cloudlet> createCloudlets(int userid, long n, long n1, int nextid)
     {
         if(n1==0)
             return new ArrayList<>();
@@ -188,7 +188,7 @@ public class MatrixMultiplicationSimulation {
         {
             for (int j = 0; j < n_slices; j++)
             {
-                list.add(new CloudletUser(userid, counter++, full_complexity, 1)
+                list.add(new CloudletUser(userid, ++nextid, full_complexity, 1)
                         .setUtilizationModel(utilization));
             }
         }
@@ -196,12 +196,12 @@ public class MatrixMultiplicationSimulation {
         {
             for (int i = 0; i < n_slices; i++)
             {
-                list.add(new CloudletUser(userid, counter++, p_complexity, 1)
+                list.add(new CloudletUser(userid, ++nextid, p_complexity, 1)
                         .setUtilizationModel(utilization));
-                list.add(new CloudletUser(userid, counter++, p_complexity, 1)
+                list.add(new CloudletUser(userid, ++nextid, p_complexity, 1)
                         .setUtilizationModel(utilization));
             }
-            list.add(new CloudletUser(userid, counter++, pp_complexity, 1)
+            list.add(new CloudletUser(userid, ++nextid, pp_complexity, 1)
                     .setUtilizationModel(utilization));
         }
 
@@ -229,9 +229,8 @@ public class MatrixMultiplicationSimulation {
 
         start = System.nanoTime();
         List<Cloudlet> cloudlets = new ArrayList<>();
-        Integer counter = 0;
-        cloudlets.addAll(createCloudlets(0, MMS.problemSize(), MMS.getSlise1(), counter));
-        cloudlets.addAll(createCloudlets(1, MMS.problemSize(), MMS.getSlise2(), counter));
+        cloudlets.addAll(createCloudlets(0, MMS.problemSize(), MMS.getSlise1(), 0));
+        cloudlets.addAll(createCloudlets(1, MMS.problemSize(), MMS.getSlise2(), cloudlets.get(cloudlets.size() - 1).getId()));
         end = System.nanoTime();
 
         // DEBUG INFO
@@ -531,11 +530,13 @@ public class MatrixMultiplicationSimulation {
                 {
                     case "all_mt": {
                         ExecutorService es = newFixedThreadPool(4);
-                        int counter = 1;
                         for (Class current_scheduler : scheduler_mapper.values()) {
-                            String filename = String.format("results%d.txt", counter++);
-                            if(current_scheduler!=null)
+                            if(current_scheduler!=null) {
+                                DateFormat dateFormat = new SimpleDateFormat("yyyy_MM_dd__HH_mm_ss");
+                                Date date = new Date();
+                                String filename = String.format("%s.%s.txt", current_scheduler.getSimpleName(), dateFormat.format(date));
                                 es.execute(() -> simulate_step(current_scheduler, MipsCapacities, n, start_slice, max_slice, step, filename, single, print_debug));
+                            }
                         }
                         es.shutdown();
                         try {
@@ -546,11 +547,13 @@ public class MatrixMultiplicationSimulation {
                         break;
                     }
                     case "all_st": {
-                        int counter = 1;
                         for (Class current_scheduler : scheduler_mapper.values()) {
-                            String filename = String.format("results%d.txt", counter++);
-                            if(current_scheduler!=null)
+                            if(current_scheduler!=null) {
+                                DateFormat dateFormat = new SimpleDateFormat("yyyy_MM_dd__HH_mm_ss");
+                                Date date = new Date();
+                                String filename = String.format("%s.%s.txt", current_scheduler.getSimpleName(), dateFormat.format(date));
                                 simulate_step(current_scheduler, MipsCapacities, n, start_slice, max_slice, step, filename, single, print_debug);
+                            }
                         }
                         break;
                     }
