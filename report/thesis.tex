@@ -1,0 +1,38 @@
+\documentclass[a4paper,14pt,final]{extreport}
+
+\input{packages}
+\input{newcommands}
+\setcounter{page}{4} % задаємо початок нумерації сторінок
+
+\begin{document}
+	
+\include{abstract_ua}
+\include{abstract_en}
+
+	
+\tableofcontents
+
+
+\include{shortcuts}				% Список використаних скорочень
+
+
+\include{intro}					% Вступ
+
+\includechapter{task_analysis}	% Розділ Аналіз задачі
+
+\includechapter{theory}			% Розділ Теоретичний
+
+\includechapter{practice}		% Розділ Практичний
+
+\includechapter{startup}		% Розділ Стартап
+
+
+\include{work_concludion}		% Висновок до роботи
+
+
+\include{bibliography}			% Бібліографія
+
+\addtocounter{totfigures}{\value{figure}}
+\addtocounter{tottables}{\value{table}}
+	
+\end{document}
