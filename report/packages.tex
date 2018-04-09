@@ -45,6 +45,7 @@
 \clubpenalty=10000
 \widowpenalty=10000
 
+\usepackage{verbatim} 
 \usepackage{textcomp}
 \usepackage{gensymb}
 
@@ -62,6 +63,7 @@
 \usepackage{etoolbox}
 \usepackage[title,titletoc]{appendix}
 \usepackage{pdfpages}
+\usepackage{multirow}
 
 
 \usepackage{listings}
@@ -237,3 +239,7 @@
 
 % csv importer
 \usepackage{csvsimple}
+
+% itemize-like for tables
+\usepackage{booktabs}% http://ctan.org/pkg/booktabs
+\newcommand{\tabitem}{~~\llap{\textbullet}~~}
