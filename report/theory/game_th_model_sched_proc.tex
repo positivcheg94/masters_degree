@@ -100,28 +100,28 @@ T_s(x,X(n)) = \max\limits_{i=1,\ldots,m} \bigg\{ d_i \frac{N^3}{p_i} + d_i \frac
 
 Позначимо за $T_i$ час роботи вузла $i$, тоді:
 \begin{equation}
-	\begin{split}
-		T_i = d_i \frac{N^3}{p_i} + d_i \frac{N^2 ( 1 + 2*\frac{N}{n} )}{q} + d_i \frac{N^2}{n^2} l
-		\\
-		T_s(x,X(n)) = \max\limits_{i=1,\ldots,m} T_i
-	\end{split}
+	\begin{aligned} 
+		T_i &= d_i \frac{N^3}{p_i} + d_i \frac{N^2 ( 1 + 2*\frac{N}{n} )}{q} + d_i \frac{N^2}{n^2} l \\
+		T_s(x,X(n)) &= \max\limits_{i=1,\ldots,m} T_i
+	\end{aligned} 
 \end{equation}
 
 Виділимо окремі складові $T_i$:
 \begin{equation}
-	\begin{split}
-		A_i = \frac{N^3}{p_i}
-		\\
-		B_i = \frac{N^2 ( 1 + 2*\frac{N}{n} )}{q}
-		\\
-		C_i = \frac{N^2}{n^2} l
-		\\
-		T_i = d_i ( A_i + B_i + C_i )
-	\end{split}
-\label{eq:T_i_parts}
+	\begin{aligned} 
+		A_i &= \frac{N^3}{p_i} \\
+		B_i &= \frac{N^2 ( 1 + 2*\frac{N}{n} )}{q} \\
+		C_i &= \frac{N^2}{n^2} l \\
+		T_i &= d_i ( A_i + B_i + C_i )
+	\end{aligned} 
+	\label{eq:T_i_parts}
 \end{equation}
 
 Таким чином ми розділили час виконання на 3 окремі складові, кожна з яких має свій сенс. Перша складова $A_i$ відповідає за сумарну складність алгоритма множення двох матриць без розбиття. Друга складова $B_i$ відповідає за надлишковість передачі даних і третя $C_i$ за затримки.
+
+Причому помітимо, що $A_i$ ніяк не залежить від $n$. Тобто перша складова це завжди повна складність задачі множення цілих матриць і незалежно від розбиття складність блочного множення сумарно така сама.
+
+
 
 
 \section{Дискретна версія моделі обчислень множення матриць}
