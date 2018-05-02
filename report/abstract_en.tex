@@ -3,18 +3,23 @@
 
 The thesis: \pageref*{MyLastPage}~p. , \totfig~fig., \tottab~tabl., \total{citenum}~sources and ? appendices.
 
-The theme of this thesis is ``Game theoretic analysis of schedulers in heterogeneous multiprocessor environment''.
+The topic of this thesis is ``Game theoretic analysis of schedulers in heterogeneous multiprocessor environment''.
 
-The purpose of this work is to construct a simulation system to emulate the process of parallel multiplication of matrices by splitting them into blocks. The second part of the work is the analysis and development of the mathematical model of the process and revaluation of the model with the help of the built simulation system. Alternative methods of solving the problem are also proposed.
+The work is relevant because the problem of efficient computing exists and many studies are conducted in this direction with the application of different approaches, including the theory of games.
+
+The purpose of this study is to search for the equilibriums and solutions of the matrix multiplication game in a distributed environment with two users. Firstly, we need to build a matrix multiplication model and, for its testing, develop a simulation system that will allow you to experiment more quickly than in real cloud environments. The developed system should have sufficient performance to simulate all combinations of two player strategies in a short time.
+
+The research is carried out by the method of scientific modeling of the process of block multiplication of the matrix. This work is based on a fluid model, which is considered for a continuous case, is further reduced to a discrete model. At the second stage of the research, experiments are carried out with the help of the developed simulation system, which allow us to estimate the accuracy of the constructed mathematical model and to investigate the game for the presence of equilibrium.
+
+The novelty of the results is that a simulation system is developed that allows you to experiment and explore the cloud environment in a much shorter time on a simple computer. Also, this system allows you to separately examine each component of the function of total time. Another feature is the universality through which you can expand the capabilities of the simulation system and thus simulate a larger set of tasks.
 
 Thesis results:
 \begin{itemize}
-	\item The model for a static scheduler of type minmin is analyzed
-	\item Considered the planners minmax, maxmin and maxmax as similar to minmin.
+	\item The model for a static scheduler of type extr extr is analyzed
 	\item A simulation system was developed to emulate the process of multiplying matrices by block.
 	\item other approaches to the problem are considered: numerical methods of optimization, machine learning, etc.
 \end{itemize}
 
-The results of this work can be used in the development of a distributed computing system in order to minimize the time of parelle tasks in the conditions of the ability to control the complexity of tasks. Also, based on this work can be analyzed more complex schedulers.
+The results of this work can be used in the development of a distributed computing system in order to minimize the time of parelle tasks execution in conditions of the ability to control the complexity of tasks when partitioning them into subtasks. Further research can be conducted in the direction of the analysis of standard operations of BLAS linear algebra standard.
 
-\MakeUppercase{Schedulers, matrix multiplication, game theory, cloud computing.} 
+\MakeUppercase{schedulers, matrix multiplication, game theory, cloud computing, equilibrium.} 
