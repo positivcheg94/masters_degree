@@ -1,0 +1,38 @@
+% !TEX root = ../thesis.tex
+
+\begin{appendices}
+	
+	%\includepdfset{nup=1x2,frame=true,delta=10mm 10mm,noautoscale=false}
+	%\includepdf[pages=1-2,scale=0.78,offset=10mm -20mm, pagecommand={\append{Ілюстративні матеріали доповіді}} {appendicies/beamer/beamer-main.pdf}
+	%\includepdf[pages=3-,scale=0.78,offset=10mm 0mm,pagecommand={\fancyhead[R]{\thepage}} ] {appendicies/beamer/beamer-main.pdf}
+	
+	\append{Лістинг коду}
+	\section*{Код симулятора на мові C++}
+	\lstinputlisting{appendicies/cppcode/main.cpp}	
+	\lstinputlisting{appendicies/cppcode/smpp/mmsim.hpp}
+	\lstinputlisting{appendicies/cppcode/smpp/priority_queue.hpp}
+	\lstinputlisting{appendicies/cppcode/smpp/processor.hpp}
+	\lstinputlisting{appendicies/cppcode/smpp/smpp.hpp}
+	\lstinputlisting{appendicies/cppcode/smpp/task.hpp}
+	\lstinputlisting{appendicies/cppcode/smpp/task_completition.hpp}
+	\lstinputlisting{appendicies/cppcode/smpp/task_processor.hpp}
+	
+	\section*{Код симулятора на мові Java з використанням пакета CloudSim Plus}
+	\lstinputlisting{../code/cloud_simulations/src/main/java/com/simulations/matrix/BasicScheduler.java}
+	\lstinputlisting{../code/cloud_simulations/src/main/java/com/simulations/matrix/CloudletsTableBuilderExtended.java}
+	\lstinputlisting{../code/cloud_simulations/src/main/java/com/simulations/matrix/CloudletUser.java}
+	\lstinputlisting{../code/cloud_simulations/src/main/java/com/simulations/matrix/DataCenterSimpleFixed.java}
+	\lstinputlisting{../code/cloud_simulations/src/main/java/com/simulations/matrix/MatrixMultiplicationSimulation.java}
+	\lstinputlisting{../code/cloud_simulations/src/main/java/com/simulations/matrix/SimpleSchedulers.java}
+	
+	\section*{Додаткові скрипти для обробки результатів}
+	\lstinputlisting{../scripts/plot.py}
+	\lstinputlisting{../scripts/plot_single.py}
+	\lstinputlisting{../scripts/plot_single_cpp.py}
+	\lstinputlisting{../scripts/plot_single_cpp_together.py}
+	\lstinputlisting{../scripts/plot_surf.py}
+	\lstinputlisting{../scripts/plot_surf_matplotlib.py}
+	\lstinputlisting{../scripts/plot_surf_together_wireframe.py}
+	\lstinputlisting{../scripts/utils.py}
+
+\end{appendices}
