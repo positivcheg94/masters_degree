@@ -205,9 +205,9 @@ T_s(x,X(n)) = \max\limits_{i=1,\ldots,m} \bigg\{ d_i \frac{N^3}{p_i} + d_i \frac
 Для $i$-го гравця кажуть, що $x^1_i$ домінує $x^2_i$, $x^1_i, x^2_i \in S_i$, якщо $f_i(x^1_i, x_{-i}) > f_i(x^2_i, x_{-i}), x_{-i} \in S_1 \times S_2 \times \ldots S_{i-1} \times S_{i+1} \times \ldots \times S_n$. Також кажуть, що $x^2_i$ домінована $x^1_i$. Також домінування може бути нестрогим, для цього у визначенні потрібно використовувати нестрогу нерівність.
 
 \begin{table}[H]
-	\centering
-	\label{table:simple_game}
 	\caption{Проста гра двох осіб у матричній формі}
+	\label{table:simple_game}
+	\centering
 	\begin{tabular}{|p{1cm}|p{1cm}|p{1cm}|p{1cm}|}
 		\hline
 		        & 1     & 2     & 3
@@ -236,18 +236,19 @@ $x^*$ є рівновагою за Нешем якщо:
 Найпопулярнішою демонстрацією рівноваги за Нешем є дилема в'язня.
 
 \begin{table}[H]
-	\centering
-	\label{table:prisoners_dillema}
 	\caption{Ілюстрація дилеми в'язня як гри у матричній формі}
-	\begin{tabular}{|l|l|l|}
-		\hline
-					& Співпраця & Зрада
-		\\ \hline
-		Співпраця 	& 2 , 2     & 10 , 1
-		\\ \hline
-		Зрада 		& 1 , 10    & 5 , 5
-		\\ \hline
-	\end{tabular}
+	\label{table:prisoners_dillema}
+	\begin{center}
+		\begin{tabular}{|l|l|l|}
+			\hline
+						& Співпраця & Зрада
+			\\ \hline
+			Співпраця 	& 2 , 2     & 10 , 1
+			\\ \hline
+			Зрада 		& 1 , 10    & 5 , 5
+			\\ \hline
+		\end{tabular}
+	\end{center}
 \end{table}
 
 Таблиця \ref{table:prisoners_dillema} показує типове визначення дилеми в'язня. У таблиці записані програші учасників, тобто кожен з них намагається мінімізувати свій програш і таким чином максимізувати виграш.
@@ -264,7 +265,7 @@ $x^*$ є рівновагою за Нешем якщо:
 
 Для гри двох гравців визначені деякі методи знаходження рівноваг Неша. У \cite{NashComplexity} проводиться аналіз складності задачі пошуку рівноваг, та доведено, що пошук це задача PPAD складності - "Polynomial Parity Arguments on Directed graphs". Це випливає в першу чегру з того, що рівновага Неша обов'язково існує у мішаних стратегіях. Задачі PPAD характеризуються саме тим, що їх розв'язок обов'язково існує, хоч його і складно знайти.
 
-У книзі \cite{AlgoGameTheory} описані алгоритми для знаходження рівноваг і основними з них є "Support enumeration" та "Vertex enumeration". Опишемо їх.
+У книзі \cite{AlgoGameTheory} описані алгоритми для знаходження рівноваг і основними з них є "Support enumeration" та "Vertex enumeration". Ці алгоритми реалізовані і бібліотеці "NashPy" \cite{NashPy}. Опишемо їх.
 
 Основні визначення.
 
