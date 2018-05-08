@@ -113,9 +113,9 @@
 
 \titleformat{\chapter}
 {\filcenter}
-{\MakeUppercase{\bfseries\chaptertitlename} \thechapter}
+{\MakeUppercase{\chaptertitlename} \thechapter}
 {8pt}
-{\bfseries}{}
+{}{}
 
 \titleformat{\section}
 {\normalsize\bfseries}
@@ -141,7 +141,7 @@
 {\filcenter}
 {\MakeUppercase{\chaptertitlename} \thechapter.}
 {0.5em}
-{\bfseries}{}
+{}{}
 
 \titlespacing*{\chapter}{0pt}{0pt}{8pt}
 \titlespacing*{\section}{\parindent}{*8}{*8}
@@ -152,10 +152,11 @@
 
 \setlength{\parindent}{1.25cm} 
 
-\renewcommand{\cfttoctitlefont}{\hspace{0.38\textwidth} \bfseries\MakeUppercase}
+\renewcommand{\cftchappagefont}{\mdseries}
+\renewcommand{\cfttoctitlefont}{\hspace{0.38\textwidth} \MakeUppercase}
 \renewcommand{\cftbeforetoctitleskip}{-1em}
 \renewcommand{\cftaftertoctitle}{\mbox{}\hfill \\\\ \mbox{}\hfill{\footnotesize Ст.}\vspace{-2.5em}}
-\renewcommand{\cftchapfont}{\normalsize\bfseries \MakeUppercase{\chaptername} }
+\renewcommand{\cftchapfont}{\hspace{-1em} \normalsize \MakeUppercase{\chaptername} }
 \renewcommand{\cftsecfont}{\hspace{31pt}}
 \renewcommand{\cftsubsecfont}{\hspace{11pt}}
 \renewcommand{\cftbeforechapskip}{1em}
@@ -175,7 +176,7 @@
 \newcounter{totreferences}
 \makeatletter
 \renewcommand{\@dotsep}{2}
-\newcommand{\l@likechapter}[2]{{\bfseries\@dottedtocline{0}{0pt}{0pt}{#1}{#2}}}
+\newcommand{\l@likechapter}[2]{{\@dottedtocline{0}{0pt}{0pt}{#1}{#2}}}
 \AtEndDocument{%
 	\addtocounter{totfigures}{\value{figure}}%
 	\addtocounter{tottables}{\value{table}}%
@@ -198,7 +199,7 @@
 
 \newcommand{\likechapterheading}[1]{
 	\begin{center}
-		\par\textbf{\MakeUppercase{#1}}
+		\par{\MakeUppercase{#1}}
 	\end{center}
 	\noindent\ignorespaces
 }
