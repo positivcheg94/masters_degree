@@ -14,3 +14,15 @@
 \newcommand{\notdivides}{\nmid}
 
 \newcolumntype{P}[1]{>{\centering\arraybackslash}p{#1}}
+
+
+%space for formulas
+\makeatletter
+\g@addto@macro\normalsize{%
+	\setlength\abovedisplayskip{20pt}
+	\setlength\belowdisplayskip{20pt}
+	\setlength\abovedisplayshortskip{20pt}
+	\setlength\belowdisplayshortskip{20pt}
+}
+
+\ifoptionfinal{\newcommand{\todo}[1]{}}{\newcommand{\todo}[1]{\textcolor{red}{#1}}}
