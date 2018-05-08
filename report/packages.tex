@@ -144,8 +144,8 @@
 {\bfseries}{}
 
 \titlespacing*{\chapter}{0pt}{0pt}{8pt}
-\titlespacing*{\section}{\parindent}{*8}{*4}
-\titlespacing*{\subsection}{\parindent}{*8}{*4}
+\titlespacing*{\section}{\parindent}{*8}{*8}
+\titlespacing*{\subsection}{\parindent}{*8}{*8}
 \titlespacing*{\subsubsection}{\parindent}{*4}{*4}
 \titlespacing*{\paragraph}{\parindent}{*1}{*1}
 \titlespacing*{\subparagraph}{\parindent}{*4}{*2}
@@ -154,7 +154,7 @@
 
 \renewcommand{\cfttoctitlefont}{\hspace{0.38\textwidth} \bfseries\MakeUppercase}
 \renewcommand{\cftbeforetoctitleskip}{-1em}
-\renewcommand{\cftaftertoctitle}{\mbox{}\hfill \\ \mbox{}\hfill{\footnotesize Ст.}\vspace{-2.5em}}
+\renewcommand{\cftaftertoctitle}{\mbox{}\hfill \\\\ \mbox{}\hfill{\footnotesize Ст.}\vspace{-2.5em}}
 \renewcommand{\cftchapfont}{\normalsize\bfseries \MakeUppercase{\chaptername} }
 \renewcommand{\cftsecfont}{\hspace{31pt}}
 \renewcommand{\cftsubsecfont}{\hspace{11pt}}
@@ -208,7 +208,9 @@
 	\addcontentsline{toc}{likechapter}{\texorpdfstring{\MakeUppercase{#1}}{#1}}}
 \newcommand{\likechapternotoc}[1]{
 	\phantomsection
-	\likechapterheading{#1}}
+	\likechapterheading{#1}
+	\vspace{0pt}
+}
 
 
 \newcommand{\empline}{\mbox{}\newline}
