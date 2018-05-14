@@ -289,10 +289,11 @@ FUNCTION {field.or.null}
   if$
 }
 
+%emphasize removed
 FUNCTION {emphasize}
 { duplicate$ empty$
     { pop$ "" }
-    { "\BibEmph{" swap$ * "}" * }
+    { "" swap$ * "" * }
   if$
 }
 
@@ -504,7 +505,7 @@ FUNCTION {bbl.ppage}  %   { "\bblP." }
 {  curlanguage "english" =
     {"P."}
     { curlanguage "ukrainian" = curlanguage "russian" = or
-           {"{С.}"}
+           {"{c.}"}
            {"language is not defined: " language  "P." * * warning$ "P."}
       if$}
   if$
@@ -520,10 +521,10 @@ INTEGERS { nameptr namesleft numnames }
 
 FUNCTION {format.names}
 {
-	curlanguage "ukrainian" = curlanguage "russian" = or
-  	{#1 "{vv~}{ll}{~jj}{~ff}" format.name$}
-  	{#1 "{vv~}{ll}{~jj}{,~ff}" format.name$}
-  	if$
+  curlanguage "ukrainian" = curlanguage "russian" = or
+    {#1 "{vv~}{ll}{~jj}{~ff}" format.name$}
+    {#1 "{vv~}{ll}{~jj}{,~ff}" format.name$}
+    if$
 }
 
 
