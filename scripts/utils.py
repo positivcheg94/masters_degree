@@ -31,12 +31,19 @@ def read_file(file_name):
     general_info = {g[:g.find("=")]:float(g[g.find("=")+1:]) for g in general_info.split("|||")}
     
     n = len(slices)
-    data1 = data[:,2]
-    data2 = data[:,3]
-    df1 = pd.DataFrame(data1.reshape((n,n)), index=slices, columns=slices)
-    df2 = pd.DataFrame(data2.reshape((n,n)), index=slices, columns=slices)
+
+    if data.shape[1] == 4:
+        data1 = data[:,2]
+        data2 = data[:,3]
+        df1 = pd.DataFrame(data1.reshape((n,n)), index=slices, columns=slices)
+        df2 = pd.DataFrame(data2.reshape((n,n)), index=slices, columns=slices)
+        return general_info, np.array(slices), df1, df2
+    else:
+        data1 = data[:,1]
+        df1 = pd.DataFrame(data1.reshape((n,n)), index=slices, columns=None)
+        return general_info, np.array(slices), df1, None
     
-    return general_info, np.array(slices), df1, df2
+    
 
 
 def descend(matrix, a_0, b_0):
